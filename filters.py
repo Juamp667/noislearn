@@ -9,6 +9,7 @@ from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.model_selection import StratifiedKFold
 from sklearn.utils.validation import check_X_y
 
+
 @dataclass
 class EnsembleFilterResult:
     keep_mask: np.ndarray
