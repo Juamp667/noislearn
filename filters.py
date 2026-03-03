@@ -16,7 +16,7 @@ class EnsembleFilterResult:
     noisy_votes: np.ndarray  # nº de modelos que discrepan con y
     n_models: int
 
-class EnsembleFiltering(BaseEstimator, TransformerMixin):
+class EnsembleFiltering(BaseEstimator): #, TransformerMixin TODO: Compatibilizar con pipeline de sklearn (ahora es compatible con pipeline de imblearn solo)
     """
     Ensemble Filtering (label-noise filtering) sklearn-compatible.
 
@@ -124,15 +124,15 @@ class EnsembleFiltering(BaseEstimator, TransformerMixin):
         self.y_ = y
         return self
 
-    def transform(self, X):
-        # Turn X to array if it's not yet
-        X = np.asarray(X) if not hasattr(X, "shape") else X
+    # def transform(self, X):
+    #     # Turn X to array if it's not yet
+    #     X = np.asarray(X) if not hasattr(X, "shape") else X
 
-        # Remove noisy_samples following self.mode criterion if self.action=="remove"
-        if self.action == "remove":
-            return X[self.result_.keep_mask]
+    #     # Remove noisy_samples following self.mode criterion if self.action=="remove"
+    #     if self.action == "remove":
+    #         return X[self.result_.keep_mask]
 
-        return X # TODO: Añadir que pasa si relabel
+    #     return X # TODO: Añadir que pasa si relabel
 
     def fit_resample(self, X, y):
         # Fit the ensmble filter
