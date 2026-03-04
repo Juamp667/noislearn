@@ -2,12 +2,85 @@
     Module with functions to test noise treatment.
 '''
 
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score, make_scorer
 from imblearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_validate
 from sklearn.preprocessing import StandardScaler
 from noiseData import *
+
+SCORING_DEFAULT = {
+    "Acc": "accuracy",
+    "BalAcc": "balanced_accuracy",
+    "f1_macro": make_scorer(f1_score, average="macro", zero_division=0),
+    "Prec_macro": make_scorer(precision_score, average="macro", zero_division=0),
+    "Rec_macro": make_scorer(recall_score, average="macro", zero_division=0),
+}
+
+def run_cv_and_store(
+    res: dict,
+    df_key: str,          # key in res (your df_name)
+    row_name: str,        # what you want to store in res[df_key]["df_name"] (e.g. "iris_nf")
+    noise_pct: float,     # -1 baseline, or nl
+    X,
+    y,
+    estimator,
+    k_cv: int = 5,
+    scoring: dict = None,
+    n_jobs: int = -1,
+):
+    """
+    Run cross_validate and store mean test metrics into res[df_key].
+
+    Parameters
+    ----------
+    res : dict
+        Your nested results dict.
+    df_key : str
+        Which dataset bucket to store into (e.g. df_name).
+    row_name : str
+        Label stored in the 'df_name' list (e.g. df_name, df_name+'_nf', df_name+'_f').
+    noise_pct : float
+        Noise level stored in 'noise_pct' list (use -1 for baseline).
+    X, y : array-like
+        Data and labels.
+    estimator : sklearn estimator
+        Pipeline / model to be evaluated by CV.
+    k_cv : int
+        Number of folds.
+    scoring : dict
+        Scoring dict for cross_validate.
+    n_jobs : int
+        Parallel jobs for cross_validate.
+
+    Returns
+    -------
+    cv : dict
+        cross_validate output dict (so you can inspect raw fold scores if needed).
+    """
+    if scoring is None:
+        scoring = SCORING_DEFAULT
+
+    cv = cross_validate(
+        estimator=estimator,
+        X=X,
+        y=y,
+        scoring=scoring,
+        n_jobs=n_jobs,
+        cv=k_cv
+    )
+
+    # Store results
+    res[df_key]["df_name"].append(row_name)
+    res[df_key]["noise_pct"].append(noise_pct)
+    res[df_key]["Acc"].append(cv["test_Acc"].mean())
+    res[df_key]["BalAcc"].append(cv["test_BalAcc"].mean())
+    res[df_key]["f1_macro"].append(cv["test_f1_macro"].mean())
+    res[df_key]["Prec_macro"].append(cv["test_Prec_macro"].mean())
+    res[df_key]["Rec_macro"].append(cv["test_Rec_macro"].mean())
+
+    return cv
+
 
 def urlf_test_in_dfs(
     dfs, 
@@ -41,71 +114,50 @@ def urlf_test_in_dfs(
         y = df.iloc[:,-1].values
 
         # First compute baseline (no filter nor noise) results with df data
-        cv = cross_validate(
-            estimator=Pipeline(
-                [
-                    ("sc", sc),
-                    ("model", model),
-                ]
-            ),
+        pipe_base = Pipeline([("sc", sc), ("model", model)])
+
+        run_cv_and_store(
+            res=res,
+            df_key=df_name,
+            row_name=df_name,
+            noise_pct=-1,
             X=X,
             y=y,
-            scoring={
-                "Acc":"accuracy",
-                "BalAcc":"balanced_accuracy",
-                "f1_macro":"f1_macro",
-                "Prec_macro":"precision_macro",
-                "Rec_macro":"recall_macro"
-            },
-            n_jobs=-1,
-            cv=k_cv)
-
-        # Store results
-        res[df_name]["df_name"].append(df_name)
-        res[df_name]["noise_pct"].append(-1)    # -1 means baseline with no filtering technique applied
-        res[df_name]["Acc"].append(cv["test_Acc"].mean())
-        res[df_name]["BalAcc"].append(cv["test_BalAcc"].mean())
-        res[df_name]["f1_macro"].append(cv["test_f1_macro"].mean())
-        res[df_name]["Prec_macro"].append(cv["test_Prec_macro"].mean())
-        res[df_name]["Rec_macro"].append(cv["test_Rec_macro"].mean())
+            estimator=pipe_base,
+            k_cv=k_cv
+        )
 
         # Iter through noise_levels
         for nl in noise_levels:
             print(f"Processing {df_name} with noise level={nl}.")
             # Apply random uniform noise with nl as noise level
-            y_noisy = urlf(y, noise_level=nl, random_state=rs)
+            y_noisy = urlf(y.copy(), noise_level=nl, random_state=rs)
 
-            # Compute results without filter
-            cv = cross_validate(
+            # Compute results without filter applied
+            run_cv_and_store(
+                res=res,
+                df_key=df_name,
+                row_name=df_name + "_nf",
+                noise_pct=nl,
+                X=X,
+                y=y_noisy,
                 estimator=Pipeline(
                     [
                         ("sc", sc),
                         ("model", model),
                     ]
                 ),
-                X=X,
-                y=y_noisy,
-                scoring={
-                    "Acc":"accuracy",
-                    "BalAcc":"balanced_accuracy",
-                    "f1_macro":"f1_macro",
-                    "Prec_macro":"precision_macro",
-                    "Rec_macro":"recall_macro"
-                },
-                n_jobs=-1,
-                cv=k_cv)
-
-            # Store results
-            res[df_name]["df_name"].append(df_name+"_nf")   # nf means "not filtered"
-            res[df_name]["noise_pct"].append(nl)    # -1 means baseline with no filtering technique applied
-            res[df_name]["Acc"].append(cv["test_Acc"].mean())
-            res[df_name]["BalAcc"].append(cv["test_BalAcc"].mean())
-            res[df_name]["f1_macro"].append(cv["test_f1_macro"].mean())
-            res[df_name]["Prec_macro"].append(cv["test_Prec_macro"].mean())
-            res[df_name]["Rec_macro"].append(cv["test_Rec_macro"].mean())
+                k_cv=k_cv
+            )
 
             # Compute results with filter applied
-            cv = cross_validate(
+            run_cv_and_store(
+                res=res,
+                df_key=df_name,
+                row_name=df_name + "_f",
+                noise_pct=nl,
+                X=X,
+                y=y_noisy,
                 estimator=Pipeline(
                     [
                         ("filter", filter),
@@ -113,26 +165,8 @@ def urlf_test_in_dfs(
                         ("model", model),
                     ]
                 ),
-                X=X,
-                y=y_noisy,
-                scoring={
-                    "Acc":"accuracy",
-                    "BalAcc":"balanced_accuracy",
-                    "f1_macro":"f1_macro",
-                    "Prec_macro":"precision_macro",
-                    "Rec_macro":"recall_macro"
-                },
-                n_jobs=-1,
-                cv=k_cv)
-
-            # Store results
-            res[df_name]["df_name"].append(df_name+"_f")   # f means "filtered"
-            res[df_name]["noise_pct"].append(nl)    # -1 means baseline with no filtering technique applied
-            res[df_name]["Acc"].append(cv["test_Acc"].mean())
-            res[df_name]["BalAcc"].append(cv["test_BalAcc"].mean())
-            res[df_name]["f1_macro"].append(cv["test_f1_macro"].mean())
-            res[df_name]["Prec_macro"].append(cv["test_Prec_macro"].mean())
-            res[df_name]["Rec_macro"].append(cv["test_Rec_macro"].mean())
+                k_cv=k_cv
+            )
         print("\n")
 
     return res
