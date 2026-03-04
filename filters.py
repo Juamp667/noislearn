@@ -606,3 +606,219 @@ class IterativePartitioningFilter(BaseEstimator):
             "k_patience": int(self.k_patience),
             "max_iter": int(self.max_iter),
         }
+
+
+
+
+
+
+
+from sklearn.neighbors import NearestNeighbors
+
+
+@dataclass
+class ENNFilterResult:
+    """
+    Outcome of ENN/MENN filtering.
+
+    Attributes
+    ----------
+    keep_mask : (n_samples,) bool
+        True if kept, False if flagged/removed.
+    noisy_fraction : float
+        Fraction flagged/removed (if action="remove") or fraction flagged (if "relabel").
+    nn_pred : (n_samples,) array-like
+        Neighbor-vote predicted label for each sample.
+    disagree_count : (n_samples,) int
+        Number of selected neighbors whose label differs from y[i].
+    neighbor_count_used : (n_samples,) int
+        Number of neighbors actually used for the vote (==k for ENN; >=k for MENN if ties).
+    kth_distance : (n_samples,) float
+        Distance to the k-th neighbor (excluding self). Useful to debug ties.
+    """
+    keep_mask: np.ndarray
+    noisy_fraction: float
+    nn_pred: np.ndarray
+    disagree_count: np.ndarray
+    neighbor_count_used: np.ndarray
+    kth_distance: np.ndarray
+
+
+class ENNFilter(BaseEstimator):
+    """
+    Edited Nearest Neighbor filter with optional MENN tie-handling.
+
+    Parameters
+    ----------
+    n_neighbors : int, default=3
+        k in kNN.
+    mode : {"enn","menn"}, default="enn"
+        - "enn": use exactly k nearest neighbors
+        - "menn": use k+l neighbors where l are neighbors tied at the same distance as the k-th neighbor
+    metric : str, default="minkowski"
+        Distance metric.
+    p : int, default=2
+        Minkowski power (only if metric="minkowski").
+    tie_eps : float, default=1e-12
+        Numerical tolerance for considering distances equal in MENN mode.
+        A neighbor with distance <= d_k + tie_eps is included (excluding self).
+    action : {"remove","relabel"}, default="remove"
+        Remove flagged samples or relabel them with neighbor vote.
+    n_jobs : int or None, default=None
+        Parallelism for NearestNeighbors where supported.
+
+    Notes
+    -----
+    - This is a classic editing filter: a point is flagged if neighbor-vote prediction != its label.
+    - When mode="enn" majority vote ties are broken deterministically by picking the smallest label under np.unique order.
+    """
+
+    def __init__(
+        self,
+        n_neighbors: int = 3,
+        mode: str = "enn",
+        metric: str = "minkowski",
+        p: int = 2,
+        tie_eps: float = 1e-12,
+        action: str = "remove",
+        n_jobs: Optional[int] = None,
+    ):
+        self.n_neighbors = n_neighbors
+        self.mode = mode
+        self.metric = metric
+        self.p = p
+        self.tie_eps = tie_eps
+        self.action = action
+        self.n_jobs = n_jobs
+
+    @staticmethod
+    def _majority_vote(labels_1d: np.ndarray):
+        """Deterministic majority vote (ties -> smallest label by np.unique order)."""
+        vals, cnts = np.unique(labels_1d, return_counts=True)
+        return vals[np.argmax(cnts)]    # Return the target_label with more counts
+
+    def fit(self, X, y):
+        X, y = check_X_y(X, y, accept_sparse=True)
+        X = np.asarray(X)
+        y = np.asarray(y)
+
+        n = X.shape[0]  # n_samples
+        k = int(self.n_neighbors)   # Base neighbourhood size
+
+        # Check self.n_neighbors is ok
+        if k < 1:
+            raise ValueError("n_neighbors must be >= 1")
+        if n <= k:
+            raise ValueError(f"Need n_samples > n_neighbors. Got n_samples={n}, n_neighbors={k}.")
+
+        # Check self.mode is ok
+        if self.mode not in {"enn", "menn"}:
+            raise ValueError("mode must be 'enn' or 'menn'")
+
+        # Check self.action is ok
+        if self.action not in {"remove", "relabel"}:
+            raise ValueError("action must be 'remove' or 'relabel'")
+
+
+        # Set the numbers of neighbours to compare each sample withç
+        if  self.mode == "enn":
+            n_query = k + 1 # +1 so its no compared with itself
+        else:   # TODO: OPTIMIZAR PARA NO COMPARAR CON TODOS, SINO HACERLO DINÁMICAMENTE 
+                # PEj comparando con los k+2 y analizando si las últimas 2 distancias son iguales
+            n_query = n 
+
+        # Compute neighborhood corresponding to each sample
+        nn = NearestNeighbors(
+            n_neighbors=n_query,
+            metric=self.metric,
+            p=self.p if self.metric == "minkowski" else None,
+            n_jobs=self.n_jobs,
+        )
+        nn.fit(X)
+
+        # Extract indices and distances of the neighborhood of each sample
+        # (REMEMBER idxs includes self at position 0 with distance ~0)
+        dists, idxs = nn.kneighbors(X, return_distance=True)
+
+
+        nn_pred = np.empty(n, dtype=object)         # Prediction based on neighborhood
+        disagree_count = np.empty(n, dtype=int)     # Number of disagrrements in neighborhood
+        neighbor_count_used = np.empty(n, dtype=int)# Number of neighbors used
+        kth_distance = np.empty(n, dtype=float)     # Highest neighbor distance
+
+
+        # Compare each sample_i to its neighborhood
+        for i in range(n):  
+            di = dists[i]   # Neighbors distances
+            ii = idxs[i]    # Neighbors indices
+            # exclude self
+            di = di[1:]
+            ii = ii[1:]
+
+
+            if self.mode == "enn":
+                neigh_idx = ii
+                neigh_dist = di
+            else:   # if MEEN mode
+                # Include all neighbors with dist <= d_k + eps
+                d_k = di[k - 1] # k_neighbor distance from smaple_i
+                mask = (di <= (d_k + float(self.tie_eps))) # Mask with samples approx inside the hpr-sphere from sample_i to it k_neighbor
+
+                #  Extract k+l neighbors to consider for sample_i
+                neigh_idx = ii[mask]
+                neigh_dist = di[mask]
+
+            # Extract the target label of the neighborhood of sample_i
+            neigh_labels = y[neigh_idx]
+            # Compute the most common target lavel in the neighborhood of sample_i
+            pred_i = self._majority_vote(neigh_labels) 
+            # Store that prediction (and related info)
+            nn_pred[i] = pred_i
+            disagree_count[i] = int(np.sum(neigh_labels != y[i]))
+            neighbor_count_used[i] = int(len(neigh_idx))
+            kth_distance[i] = float(di[k - 1]) 
+
+        # Compute noisy samples as those mislabeled by majority consensus in their neighborhood
+        noisy_mask = (nn_pred != y)
+        keep_mask = ~noisy_mask
+
+        self.result_ = ENNFilterResult(
+            keep_mask=keep_mask,
+            noisy_fraction=float(noisy_mask.mean()),
+            nn_pred=nn_pred,
+            disagree_count=disagree_count,
+            neighbor_count_used=neighbor_count_used,
+            kth_distance=kth_distance,
+        )
+        self.X_ = X
+        self.y_ = y
+        return self
+
+    def fit_resample(self, X, y):
+        self.fit(X, y)
+
+        if self.action == "remove":
+            km = self.result_.keep_mask
+            return self.X_[km], self.y_[km]
+
+        # relabel TODO: Repasar relabeling
+        y_new = np.asarray(self.y_).copy()
+        noisy_idx = np.where(~self.result_.keep_mask)[0]
+        y_new[noisy_idx] = self.result_.nn_pred[noisy_idx]
+        return self.X_, y_new
+
+    def get_filter_report(self) -> Dict[str, Any]:
+        r = self.result_
+        return {
+            "n_samples": int(self.X_.shape[0]),
+            "mode": self.mode,
+            "n_neighbors_k": int(self.n_neighbors),
+            "avg_neighbors_used": float(np.mean(r.neighbor_count_used)),
+            "max_neighbors_used": int(np.max(r.neighbor_count_used)),
+            "removed_or_flagged": int((~r.keep_mask).sum()),
+            "fraction_flagged": float(r.noisy_fraction),
+            "metric": self.metric,
+            "p": int(self.p) if self.metric == "minkowski" else None,
+            "tie_eps": float(self.tie_eps),
+            "action": self.action,
+        }
