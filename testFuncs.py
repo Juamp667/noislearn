@@ -121,7 +121,7 @@ def urlf_test_in_dfs(
             res=res,
             df_key=df_name,
             row_name=df_name,
-            noise_kw=-1,
+            noise_kw={},
             X=X,
             y=y,
             estimator=pipe_base,
@@ -132,17 +132,19 @@ def urlf_test_in_dfs(
         for np in noise_kw:
             print(f"Processing {df_name} with noise params={np}.")
 
+            # Initialize noiser
+            noiser.set_params(**np)
             # Compute results without filter applied
             run_cv_and_store(
                 res=res,
                 df_key=df_name,
                 row_name=df_name + "_nf",
-                noise_kw=noise_kw,
+                noise_kw=np,
                 X=X,
                 y=y,
                 estimator=Pipeline(
                     [
-                        ("noiser", noiser(*np)),
+                        ("noiser", noiser),
                         ("sc", sc),
                         ("model", model),
                     ]
@@ -155,7 +157,7 @@ def urlf_test_in_dfs(
                 res=res,
                 df_key=df_name,
                 row_name=df_name + "_f",
-                noise_kw=noise_kw,
+                noise_kw=np,
                 X=X,
                 y=y,
                 estimator=Pipeline(
