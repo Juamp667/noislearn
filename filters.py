@@ -556,7 +556,8 @@ class IterativePartitioningFilter(BaseEstimator):
             elif self.action == "relabel":
                 # Relabel flagged in the ORIGINAL y array for samples in E
                 flagged_orig = E_idx[noisy_local]
-                y[flagged_orig] = maj[noisy_local]
+                y_out = y.copy()
+                y_out[flagged_orig] = maj[noisy_local]
                 # Keep them (do not remove)
             else:
                 raise ValueError("action must be 'remove' or 'relabel'")
@@ -579,7 +580,7 @@ class IterativePartitioningFilter(BaseEstimator):
 
         # cache for resampling
         self.X_ = X
-        self.y_ = y
+        self.y_ = y_out
         return self
 
     def fit_resample(self, X, y):
