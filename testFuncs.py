@@ -7,7 +7,7 @@ from imblearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_validate
 from sklearn.preprocessing import StandardScaler
-from noiseData import *
+from noisers import *
 
 SCORING_DEFAULT = {
     "Acc": "accuracy",
@@ -21,7 +21,7 @@ def run_cv_and_store(
     res: dict,
     df_key: str,          # key in res (your df_name)
     row_name: str,        # what you want to store in res[df_key]["df_name"] (e.g. "iris_nf")
-    noise_pct: float,     # -1 baseline, or nl
+    noise_kw: float,     # -1 baseline, or nl
     X,
     y,
     estimator,
@@ -72,7 +72,7 @@ def run_cv_and_store(
 
     # Store results
     res[df_key]["df_name"].append(row_name)
-    res[df_key]["noise_pct"].append(noise_pct)
+    res[df_key]["noise_kw"].append(noise_kw)
     res[df_key]["Acc"].append(cv["test_Acc"].mean())
     res[df_key]["BalAcc"].append(cv["test_BalAcc"].mean())
     res[df_key]["f1_macro"].append(cv["test_f1_macro"].mean())
@@ -85,9 +85,10 @@ def run_cv_and_store(
 def urlf_test_in_dfs(
     dfs, 
     dfs_names, 
-    noise_levels, 
+    noise_kw, 
     rs=33, 
-    filter = None, 
+    filtr = None, 
+    noiser = None,
     model = RandomForestClassifier(random_state=33, n_jobs=-1),
     sc = StandardScaler(),
     k_cv=5
@@ -97,7 +98,7 @@ def urlf_test_in_dfs(
     res = {
         df_name : {
         "df_name":[],
-        "noise_pct":[],
+        "noise_kw":[],
         "Acc":[],
         "BalAcc":[],
         "f1_macro":[],
@@ -120,29 +121,28 @@ def urlf_test_in_dfs(
             res=res,
             df_key=df_name,
             row_name=df_name,
-            noise_pct=-1,
+            noise_kw=-1,
             X=X,
             y=y,
             estimator=pipe_base,
             k_cv=k_cv
         )
 
-        # Iter through noise_levels
-        for nl in noise_levels:
-            print(f"Processing {df_name} with noise level={nl}.")
-            # Apply random uniform noise with nl as noise level
-            y_noisy = urlf(y.copy(), noise_level=nl, random_state=rs)
+        # Iter through noise_params
+        for np in noise_kw:
+            print(f"Processing {df_name} with noise params={np}.")
 
             # Compute results without filter applied
             run_cv_and_store(
                 res=res,
                 df_key=df_name,
                 row_name=df_name + "_nf",
-                noise_pct=nl,
+                noise_kw=noise_kw,
                 X=X,
-                y=y_noisy,
+                y=y,
                 estimator=Pipeline(
                     [
+                        ("noiser", noiser(*np)),
                         ("sc", sc),
                         ("model", model),
                     ]
@@ -155,12 +155,13 @@ def urlf_test_in_dfs(
                 res=res,
                 df_key=df_name,
                 row_name=df_name + "_f",
-                noise_pct=nl,
+                noise_kw=noise_kw,
                 X=X,
-                y=y_noisy,
+                y=y,
                 estimator=Pipeline(
                     [
-                        ("filter", filter),
+                        ("noiser", noiser),
+                        ("filter", filtr),
                         ("sc", sc),
                         ("model", model),
                     ]
