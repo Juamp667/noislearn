@@ -15,7 +15,8 @@ from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
 from .ensemble import EnsembleFiltering, EnsembleFilterResult
 from .ncnedit import NCNEdit, NCNEditFilterResult
 from .iterative_partitioning import IPFIterationInfo, IterativePartitioningFilter, IterativePartitioningFilterResult, c45_like
+from .multiedit import MultiEditFilter, MultiEditFilterResult
 
 def print_available_filters():
     return ["ClassificationFilter", "ENNFilter", "ENNProb", "ENNTh", "EnsembleFilter",
-        "IterativePartitioningFilter", "NCNEdit", "CVCFFilter", ]
+        "IterativePartitioningFilter", "MultiEditFilter", "NCNEdit", "CVCFFilter", ]

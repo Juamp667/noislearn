@@ -13,12 +13,12 @@ Implemented filters include:
 - AKNN
 - IPF
 - EF
+- MultiEdit
 Planned or in progress:
 - RNGE
 - NCNEdit
 - CEWS
 - ENNTh
-- MultiEdit
 - TomekLinks
 - INFFC
 - CVCF
