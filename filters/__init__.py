@@ -13,10 +13,11 @@ from .cvcf import CVCFFilter, CVCFFilterResult
 from .enn import ENNFilter, ENNFilterResult
 from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
 from .ensemble import EnsembleFiltering, EnsembleFilterResult
+from .inffc import INFFCFilter, INFFCFilterResult, INFFCIterationInfo
 from .ncnedit import NCNEdit, NCNEditFilterResult
 from .iterative_partitioning import IPFIterationInfo, IterativePartitioningFilter, IterativePartitioningFilterResult, c45_like
 from .multiedit import MultiEditFilter, MultiEditFilterResult
 
 def print_available_filters():
     return ["ClassificationFilter", "ENNFilter", "ENNProb", "ENNTh", "EnsembleFilter",
-        "IterativePartitioningFilter", "MultiEditFilter", "NCNEdit", "CVCFFilter", ]
+        "INFFCFilter", "IterativePartitioningFilter", "MultiEditFilter", "NCNEdit", "CVCFFilter", ]

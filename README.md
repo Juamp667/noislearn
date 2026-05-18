@@ -25,13 +25,13 @@
 - CVCF
 - NCNEdit
 - ENNTh
+- INFFC
 
 #### Planned or in progress:
 
 - RNGE
 - CEWS
 - TomekLinks
-- INFFC
 
 ## Repository Structure
 
