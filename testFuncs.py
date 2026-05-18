@@ -8,7 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_validate
 from sklearn.preprocessing import StandardScaler
 from noisers import *
-from tqdm.auto import tqdm
+from tqdm import tqdm
+from tqdm.contrib import tzip
 
 SCORING_DEFAULT = {
     "Acc": "accuracy",
@@ -110,7 +111,8 @@ def urlf_test_in_dfs(
     }
 
     # Iter through dataframes
-    for (df_name, df) in tqdm(zip(dfs_names,dfs), "Cycling through dataframes"):
+    
+    for (df_name, df) in zip(tqdm(dfs_names, "Cycling through dataframes"), dfs):
 
         # Extract attributes and target from df
         X = df.iloc[:,:-1].values
@@ -134,6 +136,7 @@ def urlf_test_in_dfs(
         for np in noise_kw:
             if verbose == 1:
                 print(f"Processing {df_name} with noise params={np}.")
+                print("\n")
 
             # Initialize noiser
             noiser.set_params(**np)
@@ -173,6 +176,6 @@ def urlf_test_in_dfs(
                 ),
                 k_cv=k_cv
             )
-        print("\n")
+        
 
     return res
