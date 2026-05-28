@@ -1,23 +1,69 @@
-# Common libraries along two or more filters
-import numpy as np
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from .distance_based import (
+    AllKNN,
+    DISTANCE_BASED_FILTERS,
+    ENNFilter,
+    ENNFilterResult,
+    ENNProb,
+    ENNProbFilter,
+    ENNProbFilterResult,
+    ENNTh,
+    MultiEditFilter,
+    MultiEditFilterResult,
+    NCNEdit,
+    NCNEditFilterResult,
+    TomekLinks,
+)
+from .classifier_based import (
+    CLASSIFIER_BASED_FILTERS,
+    ClassificationFilter,
+    ClassificationFilterResult,
+    CVCFFilter,
+    CVCFFilterResult,
+    EnsembleFilterResult,
+    EnsembleFiltering,
+    INFFCFilter,
+    INFFCFilterResult,
+    INFFCIterationInfo,
+    IPFIterationInfo,
+    IterativePartitioningFilter,
+    IterativePartitioningFilterResult,
+    TABPFNClassificationFilter,
+    c45_like,
+)
 
-from sklearn.base import BaseEstimator, clone
-from sklearn.utils.validation import check_X_y
-from sklearn.model_selection import StratifiedKFold
-
-# Available filters
-from .classification import ClassificationFilter, ClassificationFilterResult
-from .cvcf import CVCFFilter, CVCFFilterResult
-from .enn import ENNFilter, ENNFilterResult
-from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
-from .ensemble import EnsembleFiltering, EnsembleFilterResult
-from .inffc import INFFCFilter, INFFCFilterResult, INFFCIterationInfo
-from .ncnedit import NCNEdit, NCNEditFilterResult
-from .iterative_partitioning import IPFIterationInfo, IterativePartitioningFilter, IterativePartitioningFilterResult, c45_like
-from .multiedit import MultiEditFilter, MultiEditFilterResult
 
 def print_available_filters():
-    return ["ClassificationFilter", "ENNFilter", "ENNProb", "ENNTh", "EnsembleFilter",
-        "INFFCFilter", "IterativePartitioningFilter", "MultiEditFilter", "NCNEdit", "CVCFFilter", ]
+    return DISTANCE_BASED_FILTERS + CLASSIFIER_BASED_FILTERS
+
+
+__all__ = [
+    "AllKNN",
+    "CLASSIFIER_BASED_FILTERS",
+    "ClassificationFilter",
+    "ClassificationFilterResult",
+    "CVCFFilter",
+    "CVCFFilterResult",
+    "DISTANCE_BASED_FILTERS",
+    "ENNFilter",
+    "ENNFilterResult",
+    "ENNProb",
+    "ENNProbFilter",
+    "ENNProbFilterResult",
+    "ENNTh",
+    "EnsembleFilterResult",
+    "EnsembleFiltering",
+    "INFFCFilter",
+    "INFFCFilterResult",
+    "INFFCIterationInfo",
+    "IPFIterationInfo",
+    "IterativePartitioningFilter",
+    "IterativePartitioningFilterResult",
+    "MultiEditFilter",
+    "MultiEditFilterResult",
+    "NCNEdit",
+    "NCNEditFilterResult",
+    "TABPFNClassificationFilter",
+    "TomekLinks",
+    "c45_like",
+    "print_available_filters",
+]

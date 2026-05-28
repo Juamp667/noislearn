@@ -39,3 +39,10 @@
 - `noisers/`: noise generation utilities
 - `testing.ipynb`: experimentation notebook
 - `testFuncs.py`: helper/test functions
+
+## Documentation
+
+The API documentation is being prepared with MkDocs Material.
+
+- Local preview: `mkdocs serve`
+- Build static site: `mkdocs build`
