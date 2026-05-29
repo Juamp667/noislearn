@@ -2,4 +2,7 @@
 Tomek-links label-noise filtering.
 """
 
-from imblearn.under_sampling import TomekLinks
+try:
+    from imblearn.under_sampling import TomekLinks
+except ModuleNotFoundError:
+    TomekLinks = None

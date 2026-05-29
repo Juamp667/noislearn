@@ -1,3 +1,5 @@
 toDo.md
 site/
 dataset/
+results_5cv/
+*.pkl

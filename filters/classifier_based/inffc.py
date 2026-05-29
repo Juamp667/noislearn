@@ -106,7 +106,7 @@ class INFFCFilter(BaseEstimator):
             preds = np.empty((m, nE), dtype=object) # -> shape = (n_estimators, n_remaining_instances)
 
             # Make oof predictions for each estimator 
-            for est_idx,  in enumerate(estimators):
+            for est_idx, est in enumerate(estimators):
                 for train_idx, test_idx in skf.split(X_E, y_E):
                     model = clone(est)
                     # Fit with train_set

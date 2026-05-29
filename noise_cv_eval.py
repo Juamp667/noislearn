@@ -17,6 +17,9 @@ from typing import Any, Iterable, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
+import warnings
+from pathlib import Path
+from datetime import datetime
 
 from testFuncs import load_dataset_df
 
@@ -427,6 +430,23 @@ def _safe_metric_rows(metric_names):
     return {name: np.nan for name in metric_names}
 
 
+def _print_invalid_experiment(*, experiment, dataset, fold, noise_type, seed, k, method, reason, n_train=None):
+    parts = [
+        "[INVALID]",
+        f"experiment={experiment}",
+        f"dataset={dataset}",
+        f"fold={int(fold)}",
+        f"noise_type={noise_type}",
+        f"seed={seed}",
+        f"k={k}",
+        f"method={method}",
+        f"reason={reason}",
+    ]
+    if n_train is not None:
+        parts.append(f"n_train={int(n_train)}")
+    print(" ".join(parts), flush=True)
+
+
 def _resolve_protected_mask(y_train, protect_classes=None):
     y_arr = np.asarray(y_train)
     if protect_classes is None:
@@ -482,6 +502,7 @@ def run_5cv_baseline(
     preprocess_before_filter: bool = True,
     protect_classes=None,
     experiment_name: Optional[str] = None,
+    verbose=0
 ):
     ml = _lazy_ml_imports()
     clone = ml["clone"]
@@ -497,7 +518,7 @@ def run_5cv_baseline(
 
     classification_rows = []
 
-    for fold in tqdm(list(folds), desc=f"5CV baseline {dataset} {noise_type}"):
+    for fold in tqdm(list(folds), desc=f"5CV baseline {dataset} {noise_type}", disable=~verbose):
         train_df, test_df, _ = _load_fold_views(
             dataset=dataset,
             noise_type=noise_type,
@@ -521,6 +542,17 @@ def run_5cv_baseline(
         n_test = int(X_test.shape[0])
 
         if fold_invalid:
+            # _print_invalid_experiment(
+            #     experiment=experiment,
+            #     dataset=dataset,
+            #     fold=fold,
+            #     noise_type=noise_type,
+            #     seed=seed_int,
+            #     k=k_int,
+            #     method="baseline",
+            #     reason="single_class_in_training_fold",
+            #     n_train=n_train_input,
+            # )
             baseline_metrics = _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
             classification_rows.append(
                 {
@@ -606,6 +638,18 @@ def run_5cv_baseline(
         if not invalid and protected_mask.any():
             keep_mask = np.ones(n_train_input, dtype=bool)
             keep_mask, invalid = _ensure_two_classes_after_protection(y_train, keep_mask, protected_mask)
+        # if invalid:
+        #     _print_invalid_experiment(
+        #         experiment=experiment,
+        #         dataset=dataset,
+        #         fold=fold,
+        #         noise_type=noise_type,
+        #         seed=seed_int,
+        #         k=k_int,
+        #         method="baseline",
+        #         reason="fit_failed_or_too_few_classes_after_protection",
+        #         n_train=n_train_input,
+        #     )
         baseline_metrics = _classification_metrics(y_test, base_pred, ml) if not invalid else _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
         classification_rows.append(
             {
@@ -701,14 +745,41 @@ def run_5cv_filters(
             )
             y_pred, invalid = _safe_fit_predict(pipe, X_train, y_train, X_test)
             class_metrics = _classification_metrics(y_test, y_pred, ml) if not invalid else _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
-            keep_mask = _extract_keep_mask(pipe, original_n=n_train_input)
-            if protected_mask.any():
-                keep_mask, invalid = _ensure_two_classes_after_protection(y_train, keep_mask, protected_mask)
+            if invalid:
+                keep_mask = np.ones(n_train_input, dtype=bool)
+                removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
+            else:
+                keep_mask = _extract_keep_mask(pipe, original_n=n_train_input)
+                if protected_mask.any():
+                    keep_mask, invalid = _ensure_two_classes_after_protection(y_train, keep_mask, protected_mask)
+                pred_removed_mask = ~keep_mask
+                removal_metrics = _removal_metrics(true_noisy_mask=true_noisy_mask, pred_removed_mask=pred_removed_mask)
+            # if invalid:
+            #     _print_invalid_experiment(
+            #         experiment=experiment,
+            #         dataset=dataset,
+            #         fold=fold,
+            #         noise_type=noise_type,
+            #         seed=seed_int,
+            #         k=k_int,
+            #         method=filter_name,
+            #         reason="fit_failed_or_too_few_classes_after_protection",
+            #         n_train=n_train_input,
+            #     )
             if np.unique(np.asarray(y_train)[keep_mask]).shape[0] <= 2:
+                # if not invalid:
+                #     _print_invalid_experiment(
+                #         experiment=experiment,
+                #         dataset=dataset,
+                #         fold=fold,
+                #         noise_type=noise_type,
+                #         seed=seed_int,
+                #         k=k_int,
+                #         method=filter_name,
+                #         reason="too_few_classes_after_filter",
+                #         n_train=n_train_input,
+                #     )
                 continue
-            pred_removed_mask = ~keep_mask
-            removal_metrics = _removal_metrics(true_noisy_mask=true_noisy_mask, pred_removed_mask=pred_removed_mask)
-
             fitted_filter = pipe.named_steps.get("filter")
             if fitted_filter is not None and getattr(fitted_filter, "action", "remove") == "remove":
                 n_train_used = int(keep_mask.sum())
@@ -733,6 +804,7 @@ def run_5cv_filters(
                     "n_train_input": n_train_input,
                     "n_train_used": n_train_used,
                     "n_test": n_test,
+                    "valid_classification": not invalid,
                     "params": pipeline_params,
                     **class_metrics,
                 }
@@ -753,6 +825,7 @@ def run_5cv_filters(
                     "preprocess_before_filter": preprocess_before_filter,
                     "n_train_input": n_train_input,
                     "n_train_used": n_train_used,
+                    "valid_classification": not invalid,
                     "params": pipeline_params,
                     **removal_metrics,
                 }
@@ -1045,6 +1118,7 @@ def run_5cv_experiment(
     return classification_df, removal_df, class_summary_df, removal_summary_df
 
 
+
 def run_5cv_grid(
     experiments: Iterable[Mapping[str, Any]],
     **shared_kwargs,
@@ -1064,11 +1138,19 @@ def run_5cv_grid(
     save_format = shared_kwargs.pop("save_format", "pickle")
     save_each = shared_kwargs.pop("save_each", False)
 
-    if save_path is not None:
-        from pathlib import Path
+    warnings_path = shared_kwargs.pop("warnings_path", None)
+    clear_warnings_file = shared_kwargs.pop("clear_warnings_file", False)
 
+    if save_path is not None:
         save_path = Path(save_path)
         save_path.mkdir(parents=True, exist_ok=True)
+
+    if warnings_path is not None:
+        warnings_path = Path(warnings_path)
+        warnings_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if clear_warnings_file:
+            warnings_path.write_text("", encoding="utf-8")
 
     def _save_experiment(exp_name, class_df, rem_df, class_summary_df=None, removal_summary_df=None):
         if save_path is None:
@@ -1097,16 +1179,47 @@ def run_5cv_grid(
         else:
             raise ValueError("save_format must be 'pickle' or 'csv'.")
 
+    def _save_warnings(exp_name, captured_warnings):
+        if warnings_path is None:
+            return
+
+        if len(captured_warnings) == 0:
+            return
+
+        with warnings_path.open("a", encoding="utf-8") as f:
+            for w in captured_warnings:
+                if issubclass(w.category, DeprecationWarning):
+                    continue
+                f.write(f"[{datetime.now().isoformat(timespec='seconds')}]\n")
+                f.write(f"Experiment: {exp_name}\n")
+                f.write(f"{w.category.__name__}: {w.message}\n")
+                f.write(f"File: {w.filename}\n")
+                f.write(f"Line: {w.lineno}\n")
+                f.write("-" * 80 + "\n")
+
     for exp in tqdm(list(experiments), desc="5CV experiments"):
         exp = dict(exp)
         exp_name = exp.pop("experiment_name", None)
         exp_name = exp.pop("label", exp_name)
 
-        result = run_5cv_filters(
-            experiment_name=exp_name,
-            **shared_kwargs,
-            **exp,
-        )
+        if warnings_path is not None:
+            with warnings.catch_warnings(record=True) as captured_warnings:
+                warnings.simplefilter("always")
+
+                result = run_5cv_filters(
+                    experiment_name=exp_name,
+                    **shared_kwargs,
+                    **exp,
+                )
+
+            _save_warnings(exp_name, captured_warnings)
+
+        else:
+            result = run_5cv_filters(
+                experiment_name=exp_name,
+                **shared_kwargs,
+                **exp,
+            )
 
         if len(result) == 4:
             class_df, rem_df, class_summary_df, removal_summary_df = result
@@ -1118,9 +1231,16 @@ def run_5cv_grid(
             removal_summary_df = None
 
         if save_each:
-            _save_experiment(exp_name or f"exp_{len(classification_frames)}", class_df, rem_df, class_summary_df, removal_summary_df)
+            _save_experiment(
+                exp_name or f"exp_{len(classification_frames)}",
+                class_df,
+                rem_df,
+                class_summary_df,
+                removal_summary_df,
+            )
 
         classification_frames.append(class_df)
+
         if not rem_df.empty:
             removal_frames.append(rem_df)
 
@@ -1129,6 +1249,7 @@ def run_5cv_grid(
         if classification_frames
         else pd.DataFrame(columns=CLASSIFICATION_COLUMNS)
     )
+
     removal_df = (
         pd.concat(removal_frames, ignore_index=True)
         if removal_frames
@@ -1140,7 +1261,13 @@ def run_5cv_grid(
         removal_summary_df = pd.concat(removal_summary_frames, ignore_index=True)
 
         if save_path is not None and not save_each:
-            _save_experiment("grid_summary", classification_df, removal_df, class_summary_df, removal_summary_df)
+            _save_experiment(
+                "grid_summary",
+                classification_df,
+                removal_df,
+                class_summary_df,
+                removal_summary_df,
+            )
 
         return classification_df, removal_df, class_summary_df, removal_summary_df
 

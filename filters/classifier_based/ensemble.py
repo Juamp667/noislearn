@@ -57,6 +57,8 @@ class EnsembleFiltering(BaseEstimator):
 
         keep_mask = ~noisy_mask
 
+        self.keep_mask = keep_mask
+        self.sample_indices_ = np.flatnonzero(keep_mask)
         self.result_ = EnsembleFilterResult(keep_mask=keep_mask, noisy_fraction=float(noisy_mask.mean()), noisy_votes=wrong_votes, n_models=m)
         self.X_ = X
         self.y_ = y

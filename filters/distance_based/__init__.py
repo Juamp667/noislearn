@@ -1,13 +1,17 @@
-from .aknn import AllKNN
+try:
+    from .aknn import AllKNN
+except ModuleNotFoundError:
+    AllKNN = None
 from .enn import ENNFilter, ENNFilterResult
 from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
 from .multiedit import MultiEditFilter, MultiEditFilterResult
 from .ncnedit import NCNEdit, NCNEditFilterResult
-from .tomeklinks import TomekLinks
+try:
+    from .tomeklinks import TomekLinks
+except ModuleNotFoundError:
+    TomekLinks = None
 
 DISTANCE_BASED_FILTERS = [
-    "AllKNN",
-    "TomekLinks",
     "ENNFilter",
     "ENNProb",
     "ENNTh",
@@ -15,8 +19,12 @@ DISTANCE_BASED_FILTERS = [
     "NCNEdit",
 ]
 
+if AllKNN is not None:
+    DISTANCE_BASED_FILTERS.insert(0, "AllKNN")
+if TomekLinks is not None:
+    DISTANCE_BASED_FILTERS.insert(1 if AllKNN is not None else 0, "TomekLinks")
+
 __all__ = [
-    "AllKNN",
     "DISTANCE_BASED_FILTERS",
     "ENNFilter",
     "ENNFilterResult",
@@ -28,5 +36,9 @@ __all__ = [
     "MultiEditFilterResult",
     "NCNEdit",
     "NCNEditFilterResult",
-    "TomekLinks",
 ]
+
+if AllKNN is not None:
+    __all__.insert(0, "AllKNN")
+if TomekLinks is not None:
+    __all__.append("TomekLinks")
