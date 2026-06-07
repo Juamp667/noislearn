@@ -105,7 +105,7 @@ class ENNProbFilter(BaseEstimator):
 
         # Compute disagreement
         noisy_mask = (nn_pred != y)
-        # If threshold mode correct noisy instances if their associated prob is no high enough
+        # If threshold mode correct noisy instances if their associated prob is not high enough
         if self.mode == "th":
             noisy_mask = noisy_mask | (max_prob < float(self.threshold))
         keep_mask = ~noisy_mask

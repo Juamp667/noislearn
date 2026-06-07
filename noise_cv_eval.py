@@ -20,6 +20,7 @@ import pandas as pd
 import warnings
 from pathlib import Path
 from datetime import datetime
+from time import perf_counter
 
 from testFuncs import load_dataset_df
 
@@ -45,8 +46,10 @@ CLASSIFICATION_COLUMNS = [
     "n_train_input",
     "n_train_used",
     "n_test",
+    "elapsed_s",
     "valid_classification",
     "params",
+    "accuracy",
     "bal_acc",
     "f1_macro",
     "precision_macro",
@@ -67,6 +70,7 @@ REMOVAL_COLUMNS = [
     "preprocess_before_filter",
     "n_train_input",
     "n_train_used",
+    "elapsed_s",
     "valid_classification",
     "params",
     "n_true_noisy",
@@ -408,6 +412,8 @@ def _removal_metrics(true_noisy_mask: np.ndarray, pred_removed_mask: np.ndarray)
 
 def _classification_metrics(y_true, y_pred, metrics):
     return {
+        "acc": metrics["accuracy_score"](y_true, y_pred),
+        "accuracy": metrics["accuracy_score"](y_true, y_pred),
         "bal_acc": metrics["balanced_accuracy_score"](y_true, y_pred),
         "f1_macro": metrics["f1_score"](y_true, y_pred, average="macro", zero_division=0),
         "precision_macro": metrics["precision_score"](y_true, y_pred, average="macro", zero_division=0),
@@ -418,11 +424,13 @@ def _classification_metrics(y_true, y_pred, metrics):
 def _safe_fit_predict(pipe, X_train, y_train, X_test):
     y_train_arr = np.asarray(y_train)
     if np.unique(y_train_arr).shape[0] < 2:
+        # print("Erroraco1")
         return None, True
     try:
         pipe.fit(X_train, y_train)
         return pipe.predict(X_test), False
     except ValueError:
+        # print("Erroraco2")
         return None, True
 
 
@@ -540,6 +548,7 @@ def run_5cv_baseline(
         resolved_preprocessor = _resolve_preprocessor(preprocessor, ml, X_train)
         n_train_input = int(X_train.shape[0])
         n_test = int(X_test.shape[0])
+        row_start = perf_counter()
 
         if fold_invalid:
             # _print_invalid_experiment(
@@ -553,7 +562,8 @@ def run_5cv_baseline(
             #     reason="single_class_in_training_fold",
             #     n_train=n_train_input,
             # )
-            baseline_metrics = _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+            baseline_metrics = _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+            elapsed_s = perf_counter() - row_start
             classification_rows.append(
                 {
                     "experiment": experiment,
@@ -570,59 +580,12 @@ def run_5cv_baseline(
                     "n_train_input": n_train_input,
                     "n_train_used": n_train_input,
                     "n_test": n_test,
+                    "elapsed_s": elapsed_s,
                     "valid_classification": False,
                     "params": _pipeline_params(resolved_preprocessor, None, classifier, True),
                     **baseline_metrics,
                 }
             )
-
-            for filter_name, filter_estimator in filters.items():
-                pipeline_params = _pipeline_params(resolved_preprocessor, filter_estimator, classifier, preprocess_before_filter)
-                class_metrics = _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
-                removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
-
-                classification_rows.append(
-                    {
-                        "experiment": experiment,
-                        "dataset": dataset,
-                        "noise_type": noise_type,
-                        "noise_pct": noise_pct,
-                        "seed": seed_int,
-                        "k": k_int,
-                        "fold": int(fold),
-                        "method": filter_name,
-                        "encoding": encoding,
-                        "test_source": test_source,
-                        "preprocess_before_filter": preprocess_before_filter,
-                        "n_train_input": n_train_input,
-                        "n_train_used": n_train_input,
-                        "n_test": n_test,
-                        "valid_classification": False,
-                        "params": pipeline_params,
-                        **class_metrics,
-                    }
-                )
-
-                removal_rows.append(
-                    {
-                        "experiment": experiment,
-                        "dataset": dataset,
-                        "noise_type": noise_type,
-                        "noise_pct": noise_pct,
-                        "seed": seed_int,
-                        "k": k_int,
-                        "fold": int(fold),
-                        "filter": filter_name,
-                        "encoding": encoding,
-                        "test_source": test_source,
-                        "preprocess_before_filter": preprocess_before_filter,
-                        "n_train_input": n_train_input,
-                        "n_train_used": n_train_input,
-                        "valid_classification": False,
-                        "params": pipeline_params,
-                        **removal_metrics,
-                    }
-                )
 
             continue
 
@@ -650,7 +613,8 @@ def run_5cv_baseline(
         #         reason="fit_failed_or_too_few_classes_after_protection",
         #         n_train=n_train_input,
         #     )
-        baseline_metrics = _classification_metrics(y_test, base_pred, ml) if not invalid else _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+        baseline_metrics = _classification_metrics(y_test, base_pred, ml) if not invalid else _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+        elapsed_s = perf_counter() - row_start
         classification_rows.append(
             {
                 "experiment": experiment,
@@ -667,6 +631,7 @@ def run_5cv_baseline(
                 "n_train_input": n_train_input,
                 "n_train_used": n_train_input,
                 "n_test": n_test,
+                "elapsed_s": elapsed_s,
                 "params": _pipeline_params(resolved_preprocessor, None, classifier, True),
                 **baseline_metrics,
             }
@@ -735,6 +700,7 @@ def run_5cv_filters(
         n_test = int(X_test.shape[0])
 
         for filter_name, filter_estimator in filters.items():
+            row_start = perf_counter()
             pipe = _build_pipeline(
                 clone=clone,
                 Pipeline=Pipeline,
@@ -744,7 +710,7 @@ def run_5cv_filters(
                 preprocess_before_filter=preprocess_before_filter,
             )
             y_pred, invalid = _safe_fit_predict(pipe, X_train, y_train, X_test)
-            class_metrics = _classification_metrics(y_test, y_pred, ml) if not invalid else _safe_metric_rows(["bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+            class_metrics = _classification_metrics(y_test, y_pred, ml) if not invalid else _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
             if invalid:
                 keep_mask = np.ones(n_train_input, dtype=bool)
                 removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
@@ -766,20 +732,23 @@ def run_5cv_filters(
             #         reason="fit_failed_or_too_few_classes_after_protection",
             #         n_train=n_train_input,
             #     )
-            if np.unique(np.asarray(y_train)[keep_mask]).shape[0] <= 2:
-                # if not invalid:
-                #     _print_invalid_experiment(
-                #         experiment=experiment,
-                #         dataset=dataset,
-                #         fold=fold,
-                #         noise_type=noise_type,
-                #         seed=seed_int,
-                #         k=k_int,
-                #         method=filter_name,
-                #         reason="too_few_classes_after_filter",
-                #         n_train=n_train_input,
-                #     )
-                continue
+            if np.unique(np.asarray(y_train)[keep_mask]).shape[0] < 2:
+                if not invalid:
+                    _print_invalid_experiment(
+                        experiment=experiment,
+                        dataset=dataset,
+                        fold=fold,
+                        noise_type=noise_type,
+                        seed=seed_int,
+                        k=k_int,
+                        method=filter_name,
+                        reason="too_few_classes_after_filter",
+                        n_train=n_train_input,
+                    )
+                invalid = True
+                class_metrics = _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
+                removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
+            elapsed_s = perf_counter() - row_start
             fitted_filter = pipe.named_steps.get("filter")
             if fitted_filter is not None and getattr(fitted_filter, "action", "remove") == "remove":
                 n_train_used = int(keep_mask.sum())
@@ -804,6 +773,7 @@ def run_5cv_filters(
                     "n_train_input": n_train_input,
                     "n_train_used": n_train_used,
                     "n_test": n_test,
+                    "elapsed_s": elapsed_s,
                     "valid_classification": not invalid,
                     "params": pipeline_params,
                     **class_metrics,
@@ -825,6 +795,7 @@ def run_5cv_filters(
                     "preprocess_before_filter": preprocess_before_filter,
                     "n_train_input": n_train_input,
                     "n_train_used": n_train_used,
+                    "elapsed_s": elapsed_s,
                     "valid_classification": not invalid,
                     "params": pipeline_params,
                     **removal_metrics,
@@ -839,8 +810,8 @@ def run_5cv_filters(
 
     class_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "method"]
     removal_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "filter"]
-    class_metric_cols = ["bal_acc", "f1_macro", "precision_macro", "recall_macro"]
-    removal_metric_cols = ["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"]
+    class_metric_cols = ["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro", "elapsed_s"]
+    removal_metric_cols = ["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc", "elapsed_s"]
 
     expected_folds = len(tuple(folds))
 
@@ -1076,7 +1047,7 @@ def run_5cv_experiment(
     class_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "method"]
     removal_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "filter"]
 
-    class_metric_cols = ["bal_acc", "f1_macro", "precision_macro", "recall_macro"]
+    class_metric_cols = ["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"]
     removal_metric_cols = [
         "removed_pct",
         "acc_removal",
@@ -1121,12 +1092,14 @@ def run_5cv_experiment(
 
 def run_5cv_grid(
     experiments: Iterable[Mapping[str, Any]],
+    save_params: bool = True,
     **shared_kwargs,
 ):
     """Run several 5CV experiments and concatenate the results.
 
     Each item in ``experiments`` is a dict with the arguments of
     ``run_5cv_experiment``. Shared keyword arguments are applied to all of them.
+    Set ``save_params=False`` to omit the ``params`` columns from saved files.
     """
 
     classification_frames = []
@@ -1157,11 +1130,27 @@ def run_5cv_grid(
             return
 
         safe_name = str(exp_name).replace("/", "_")
+
+        if save_params:
+            class_df_to_save = class_df
+            rem_df_to_save = rem_df
+            class_summary_df_to_save = class_summary_df
+            removal_summary_df_to_save = removal_summary_df
+        else:
+            class_df_to_save = class_df.drop(columns=["params"], errors="ignore")
+            rem_df_to_save = rem_df.drop(columns=["params"], errors="ignore")
+            class_summary_df_to_save = (
+                None if class_summary_df is None else class_summary_df.drop(columns=["params"], errors="ignore")
+            )
+            removal_summary_df_to_save = (
+                None if removal_summary_df is None else removal_summary_df.drop(columns=["params"], errors="ignore")
+            )
+
         payload = {
-            "classification_df": class_df,
-            "removal_df": rem_df,
-            "class_summary_df": class_summary_df,
-            "removal_summary_df": removal_summary_df,
+            "classification_df": class_df_to_save,
+            "removal_df": rem_df_to_save,
+            "class_summary_df": class_summary_df_to_save,
+            "removal_summary_df": removal_summary_df_to_save,
         }
 
         if save_format == "pickle":
@@ -1170,12 +1159,12 @@ def run_5cv_grid(
         elif save_format == "csv":
             exp_dir = save_path / safe_name
             exp_dir.mkdir(parents=True, exist_ok=True)
-            class_df.to_csv(exp_dir / "classification.csv", index=False)
-            rem_df.to_csv(exp_dir / "removal.csv", index=False)
-            if class_summary_df is not None:
-                class_summary_df.to_csv(exp_dir / "class_summary.csv", index=False)
-            if removal_summary_df is not None:
-                removal_summary_df.to_csv(exp_dir / "removal_summary.csv", index=False)
+            class_df_to_save.to_csv(exp_dir / "classification.csv", index=False)
+            rem_df_to_save.to_csv(exp_dir / "removal.csv", index=False)
+            if class_summary_df_to_save is not None:
+                class_summary_df_to_save.to_csv(exp_dir / "class_summary.csv", index=False)
+            if removal_summary_df_to_save is not None:
+                removal_summary_df_to_save.to_csv(exp_dir / "removal_summary.csv", index=False)
         else:
             raise ValueError("save_format must be 'pickle' or 'csv'.")
 
@@ -1197,7 +1186,7 @@ def run_5cv_grid(
                 f.write(f"Line: {w.lineno}\n")
                 f.write("-" * 80 + "\n")
 
-    for exp in tqdm(list(experiments), desc="5CV experiments"):
+    for exp in tqdm(list(experiments), desc=f"5CV experiments"):
         exp = dict(exp)
         exp_name = exp.pop("experiment_name", None)
         exp_name = exp.pop("label", exp_name)

@@ -1,0 +1,1590 @@
+[2026-06-02T11:40:46]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T11:40:46]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T11:42:28]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:26:17]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:26:20]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:26:22]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:16]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:19]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:25]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:27]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:33]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:28:35]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:23]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:27]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:27]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:34]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:40]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:45]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:45]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:51]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:31:57]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:32:02]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:32:02]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:32:09]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:14]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:26]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:26]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:34]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:47]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:59]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:39:59]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:40:08]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:40:21]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:40:32]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:40:32]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T16:40:41]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:51:42]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:51:44]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:51:47]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:39]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:42]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:47]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:50]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:55]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:53:58]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:56:39]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:56:44]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:56:44]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:56:51]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:56:57]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:02]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:02]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:09]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:15]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:20]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:20]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T17:57:27]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:04:40]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:04:51]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:04:51]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:00]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:14]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:26]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:26]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:34]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:47]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:58]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:05:58]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:06:07]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:36:59]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:37:43]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:37:43]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:38:27]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T18:39:00]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:01:31]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:01:56]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:02:27]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:02:56]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:03:20]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:03:52]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:04:20]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:04:44]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-02T19:05:16]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:56:46]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:56:49]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:56:51]
+Experiment: zoo|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:58:47]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:58:50]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:58:55]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:58:58]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:59:03]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T07:59:06]
+Experiment: autos|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:01:54]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:01:59]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:01:59]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:05]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:12]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:17]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:17]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:24]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:31]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:36]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:36]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:02:43]
+Experiment: glass|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:10:21]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:10:33]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:10:33]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:10:42]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:10:56]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:08]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:08]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:17]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:32]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:44]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:44]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:11:53]
+Experiment: ecoli|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:43:33]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:44:16]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:44:16]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:44:59]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T08:45:32]
+Experiment: nursery|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:09:23]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:09:50]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:10:25]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:10:57]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:11:25]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:12:00]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:12:32]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:12:59]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:13:35]
+Experiment: shuttle|cla_rand|5|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:23:04]
+Experiment: lymphography|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:23:06]
+Experiment: lymphography|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:23:10]
+Experiment: lymphography|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:23:17]
+Experiment: lymphography|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:09]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:12]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:15]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:17]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:20]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:24]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:24]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:26]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:29]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:32]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:24:32]
+Experiment: autos|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:26:55]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:26:55]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:05]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:05]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:11]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:11]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:11]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:22]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:28]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:28]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:40]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:27:40]
+Experiment: glass|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:34:24]
+Experiment: ecoli|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:34:33]
+Experiment: ecoli|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:35:06]
+Experiment: ecoli|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T09:35:38]
+Experiment: ecoli|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:06:36]
+Experiment: nursery|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:27:41]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:28:13]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:28:52]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:29:30]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:30:00]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:30:39]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:31:18]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:31:48]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:32:29]
+Experiment: shuttle|cla_rand|25|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:04]
+Experiment: zoo|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:06]
+Experiment: zoo|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:09]
+Experiment: zoo|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:12]
+Experiment: zoo|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:44]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:44]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:46]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:46]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:46]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:48]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:50]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:50]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:50]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:52]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:52]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:55]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:55]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:57]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:57]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:59]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:42:59]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:02]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:02]
+Experiment: lymphography|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:44]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:44]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:46]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:46]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:49]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:51]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:51]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:53]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:53]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:56]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:56]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:58]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:43:58]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:44:00]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:44:00]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:44:03]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:44:03]
+Experiment: autos|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:05]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:05]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:10]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:10]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:16]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:21]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:21]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:25]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:25]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:31]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:36]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:36]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:41]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:41]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:46:47]
+Experiment: glass|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:26]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:26]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:26]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:32]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:32]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:32]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:32]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:40]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:40]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:51]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:51]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:58]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:58]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:58]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:52:58]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:06]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:17]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:17]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:24]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:24]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:24]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:24]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T10:53:32]
+Experiment: ecoli|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:22:45]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:22:59]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:22:59]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:23:18]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:23:26]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:23:39]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:23:39]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:23:56]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:24:05]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:24:19]
+Experiment: nursery|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:41:58]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:43:32]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:44:15]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:45:51]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:46:34]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------
+[2026-06-05T11:48:10]
+Experiment: shuttle|cla_rand|50|CNCNOS_default
+UserWarning: y_pred contains classes not in y_true
+File: /home/juamp/Documents/Master/.venv/lib/python3.14/site-packages/sklearn/metrics/_classification.py
+Line: 2524
+--------------------------------------------------------------------------------

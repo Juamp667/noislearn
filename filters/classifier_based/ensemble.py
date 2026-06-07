@@ -19,7 +19,7 @@ class EnsembleFilterResult:
 
 
 class EnsembleFiltering(BaseEstimator):
-    def __init__(self, estimators, cv=10, mode="majority", threshold=0.5, action="remove", random_state=33, return_noisy_samples=False):
+    def __init__(self, estimators, cv=10, mode="S", threshold=0.5, action="remove", random_state=33, return_noisy_samples=False):
         self.estimators = estimators
         self.cv = cv
         self.mode = mode
@@ -50,10 +50,10 @@ class EnsembleFiltering(BaseEstimator):
 
         if self.mode == "consensus":
             noisy_mask = (wrong_votes == m)
-        elif self.mode == "majority":
+        elif self.mode == "threshold":
             noisy_mask = (wrong_frac >= self.threshold)
         else:
-            raise ValueError("mode must be 'majority' or 'consensus'")
+            raise ValueError("mode must be 'threshold' or 'consensus'")
 
         keep_mask = ~noisy_mask
 
@@ -77,6 +77,6 @@ class EnsembleFiltering(BaseEstimator):
             "removed_or_flagged": int((~self.result_.keep_mask).sum()),
             "fraction_flagged": float(self.result_.noisy_fraction),
             "mode": self.mode,
-            "threshold": self.threshold if self.mode == "majority" else None,
+            "threshold": self.threshold if self.mode == "threshold" else None,
             "action": self.action,
         }

@@ -78,7 +78,7 @@ class CNCNOSCleaner(BaseEstimator):
         max_iter: int = 10,
         stagnation_patience: int = 2,
         wns_tol: float = 1e-4,
-        final_filtering: bool = True,
+        final_filtering: bool = False,
         final_filtering_min_fraction: float = 0.2,
         min_class_count: int = 2,
         random_state: int = 33,
