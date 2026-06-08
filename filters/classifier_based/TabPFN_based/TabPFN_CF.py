@@ -124,6 +124,7 @@ class TabPFN_CF(ClassificationFilter):
         oof_fold_idx = np.full(n_samples, -1, dtype=int)
         oof_confidence = np.full(n_samples, np.nan, dtype=float)
         oof_proba = None
+        # Initilize a history for each fold
         fold_history = []
 
         for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X, y_idx)):
@@ -143,13 +144,16 @@ class TabPFN_CF(ClassificationFilter):
                 if fold_proba.ndim == 2 and fold_proba.shape[0] == test_idx.shape[0]:
                     if oof_proba is None:
                         oof_proba = np.full((n_samples, fold_proba.shape[1]), np.nan, dtype=float)
+                    # Store probabilities
                     oof_proba[test_idx] = fold_proba
+                    # Store probability associated to predicted label
                     fold_confidence = np.take_along_axis(fold_proba, fold_pred_idx[:, None], axis=1).ravel()
                     oof_confidence[test_idx] = fold_confidence
 
             oof_pred_idx[test_idx] = fold_pred_idx
             oof_fold_idx[test_idx] = fold_idx
 
+            # Store the history of the current fold iteration
             fold_history.append(
                 TabPFNFoldInfo(
                     fold_idx=fold_idx,
@@ -198,12 +202,12 @@ class TabPFN_CF(ClassificationFilter):
         if self.action == "remove":
             km = self.result_.keep_mask
             return self.X_[km], self.y_[km]
-        if self.action == "relabel":
-            y_new = np.asarray(self.y_).copy()
-            noisy_idx = np.where(~self.result_.keep_mask)[0]
-            y_new[noisy_idx] = self.result_.oof_pred[noisy_idx]
-            return self.X_, y_new
-        raise ValueError("action must be 'remove' or 'relabel'")
+        # if self.action == "relabel":
+        #     y_new = np.asarray(self.y_).copy()
+        #     noisy_idx = np.where(~self.result_.keep_mask)[0]
+        #     y_new[noisy_idx] = self.result_.oof_pred[noisy_idx]
+        #     return self.X_, y_new
+        raise ValueError("action must be 'remove'")#
 
     def get_filter_report(self):
         check_is_fitted(self, ["result_", "fold_history_"])
@@ -239,7 +243,7 @@ class TabPFN_CF(ClassificationFilter):
         return_figures: bool = False,
         max_display: int = 10,
     ):
-        """Explain noisy OOF instances fold by fold and aggregate the result.
+        """Explain OOF decisions made by the filter and aggregate the result.
 
         Parameters
         ----------
@@ -285,14 +289,20 @@ class TabPFN_CF(ClassificationFilter):
                 stacklevel=2,
             )
 
+        # Extract feature names (column_id if pandas else int_id)
         feature_names_arr = self._resolve_feature_names(feature_names)
+
+        # Initilize sample_indices to study
         selected_indices = self._normalize_sample_indices(sample_indices)
 
+        # Leave just noisy indices if noisy_only=True
         if noisy_only:
             selected_indices = [idx for idx in selected_indices if bool(self.noisy_mask_[idx])]
 
         items = []
+        # For each instance to study
         for sample_idx in selected_indices:
+            # Extract the corresponding fold history and associated info
             fold_idx = int(self.oof_fold_idx_[sample_idx])
             fold = self.fold_history_[fold_idx]
 
@@ -300,6 +310,7 @@ class TabPFN_CF(ClassificationFilter):
             target_class = self._label_at(target_class_idx)
             confidence = self._sample_confidence(sample_idx, target_class_idx)
 
+            # Initilize the explain with the model and training data
             explainer = get_tabpfn_imputation_explainer(
                 model=fold.model,
                 data=self.X_[fold.train_idx],
@@ -309,6 +320,7 @@ class TabPFN_CF(ClassificationFilter):
                 class_index=target_class_idx,
             )
 
+            # Compute explanation for the instance associated to sample_idx
             interaction_values = explainer.explain(self.X_[sample_idx : sample_idx + 1], budget=budget)
             top_features = self._extract_top_k(interaction_values, top_k, feature_names_arr)
 
@@ -369,17 +381,21 @@ class TabPFN_CF(ClassificationFilter):
         return names
 
     def _normalize_sample_indices(self, sample_indices: Sequence[int] | np.ndarray | None):
+        # If no indices are passed, return an arange
         if sample_indices is None:
             return list(range(self.X_.shape[0]))
 
         indices = np.asarray(sample_indices)
         if indices.ndim == 0:
             indices = indices.reshape(1)
+
+        # If boolean list is passed
         if indices.dtype == bool:
             if indices.shape[0] != self.X_.shape[0]:
                 raise ValueError("Boolean sample_indices mask must match n_samples")
             return list(np.flatnonzero(indices))
 
+        # If interger list is passed
         indices = indices.astype(int, copy=False).ravel()
         if np.any((indices < 0) | (indices >= self.X_.shape[0])):
             raise IndexError("sample_indices contains out-of-range values")

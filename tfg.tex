@@ -1,0 +1,1285 @@
+\documentclass[print, color]{ugrTFG}
+\usepackage{subcaption}
+\usepackage{tabularray}
+
+% Preamble
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{wrapfig}
+
+% Para que aparezcan como Table 3 y Table 4
+\setcounter{table}{2}
+
+\lstdefinestyle{mystyle}{
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  stringstyle=\color{orange},
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible
+}
+
+
+\newcommand{\miTitulo}{nois-learn: una librería compatible con sklearn destinada a la limpieza de ruido en datos tabulares\xspace}
+\newcommand{\miNombre}{Juan Miguel Padilla Galera\xspace}
+\newcommand{\miGrado}{Máster Universitario en Ciencia de Datos e Ingeniería de Computadores}
+\newcommand{\miFacultad}{Escuela Técnica Superior de Ingenierías Informática y de Telecomunicación}
+\newcommand{\miUniversidad}{Universidad de Granada}
+\newcommand{\miTutor}{Julián Luengo Martín \\ \emph{Departamento de Ciencias de la Computación e Inteligencia Artificial}}
+\newcommand{\miCurso}{2025-2026\xspace}
+
+
+
+
+\begin{document}
+\maketitle
+\mainmatter
+\tableofcontents
+
+\chapter{Introducción}
+\begin{wrapfigure}{r}{0.55\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{img/scopus_MLEvolution.png}
+    \caption{Evolución de los artículos relacionados al término \textit{Machine Learning} desde los 2000 en Scopus.}
+    \label{fig:scopus_MLEvolution}
+\end{wrapfigure}
+
+Pese a la prolífica producción académica dentro del área de la minería de datos, que tal y como muestra la figura \ref{fig:scopus_MLEvolution} reune más de 300 000 artículos en solo los últimos 3 años; así como pese a la relevancia en constante crecimiento que ha tomado el lenguaje de programación python a lo largo de los últimos años (tal y como muestra la figura \ref{fig:kdnuggets_ml_language_tool_usage_2000_2019}); hasta donde llega nuestro conocimiento, aún a día de hoy existen muy pocas librerías que implementen, en el lenguaje de programción antes mencionado, una extensa ristra (siquiera alguna sola) de técnicas de detección y limpieza de datos tabulares ruidosos.\\ 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{img/kdnuggets_ml_language_tool_usage_2000_2019.png}
+    \caption{Evolución del empleo en minería de datos de diferentes frameworks y lenguajes de programación.}
+    \label{fig:kdnuggets_ml_language_tool_usage_2000_2019}
+\end{figure}
+
+Ello no solo tiene un impacto negativo en la producción científica en la medida en que aquel que necesite usarlos deberá, primero aprenderlos, para posteriormente implementarlos y confiar en la misma implementación (es decir, no solo una pérdida de tiempo, sino también de capacidad cognitiva que podría ser más útil en otras etapas de la experimentación y análisis); sino que también tiene un impacto en cuanto a estandarización de la metodología se refiere. Ello afecta no solo en la simplicidad de comprender la metodología seguida, sino también en lo que concierne a su reproducibilidad, algo que consideramos básico en un panorama investigador en el que la colaboración debería encontrarse a la orden del día.\\
+
+Por otro lado, en un mundo en el que el almacenamiento se hace cada vez más barato, compacto y eficiente, las empresas y demás tipos de organizaciones, movidas por un síndrome de Diógenes digital que las insta a almacenar toda información que, quizás, pueda ser valiosa en un futuro, están comenzando a descubrir que no todo dato es valioso. Que lo importante no es la cantidad de datos de que dispongamos, sino la calidad de los mismos. En tales líneas los datos ruidosos se corresponden con aquellos que podríamos considerar infieles a la realidad que tratan de representar. Ello en la medida en que son incoherentes en conjunto, por ejemplo, no siguiendo los patrones esperados al observar la mayoría.\\
+
+El mundo del aprendizaje automático, basado en gran medida en algoritmos que intentan identificar y replicar patrones en datos previamente recogidos, este fenómeno, tratado de manera indebida y, más específicamente, despreocupada o inconsciente, puede tener resultados considerablemente negativos, cuando no catastróficos  (tal y como el posterior análisis demostrará). Y es que sin el debido preprocesamiento de los datos a emplear en la tarea objetivo, por la simple naturaleza de la mayoría de técnicas de aprendizaje automático, estas a priori confiarán en los datos que les introduzcamos. Es decir, dichas técnicas tratarán de adpatarse a los datos con las que las alimentemos sin, en la mayoría de los casos, cuestionarse la veracidad de los mismos.\\
+Se hace así cada vez más patente que, al igual que el reescalado de las variables numéricas o el tratamiento de valores perdidos se han establecido como un estándar básico en cualquier etapa de preprocesamiento, el tratamiento de ruido (y, cuando corresponde también, el del desequilibrio entre clases o el de \textit{fairness}) no es menos.\\
+
+
+
+De tal modo este proyecto aborda un problema que creemos de gran interés académico e investigador, en tanto en cuanto acelera y optimiza aquellas partes usualmente menos productivas y más repetitivas de la tarea. Más específicamente este trabajo propone abordar el problema anterior mediante una librería que no solo ahune una extensa ristra de técnicas útiles para la detección, filtrado y limpieza de datos ruidosos; sino que además lo haga siguiendo la arquitectura de la archiconocida librería \href{https://scikit-learn.org/stable/index.html}{scikit-learn}, diseñando con ello funciones y objetos compatibles con la misma, así como con una funcionalidad y sintaxis práctiamente idénticas.\\
+\newline
+
+Comenzaremos pues este trabajo con la seccción \ref{sect:SOTA} introduciendo el estado del arte del filtrado de conjuntos de datos ruidosos, hablando sobre los tipos de ruido existentes en la literatura, así como sobre las diferentes aproximaciones para solventar el mismo. Posteriormente, en la sección \ref{sect:descBiblio} se presentará la biblioteca de python \texttt{nois-learn} diseñada como parte de este proyecto. Más específicamente, se discutirá su arquitectura, en comparación con la de la librería \texttt{scikit-learn}; así como su uso y las diferentes técnicas implementadas hasta la fecha de entrega de este texto; junto con un ejemplo de uso. A continuación, en la sección \ref{sect:propuesta} propondremos una novedosa técnica de filtrado de conjuntos de datos basada en el empleo de Tab-PFN\cite{hollmann2023tabpfntransformersolvessmall}, hoy día establecido como algoritmo estado del arte en las tareas de predicción en conjuntos de datos tabulares. Mostrado lo anterior, en la sección \ref{sect:metodología} pasaremos a presentar la metodología a seguir de cara a:
+\begin{itemize}
+    \item La evaluación del correcto diseño y funcionamiento de las técnicas de filtrado implementadas en la librería propuesta. Ello tratando de replicar los experimentos desarrollados en \cite{LUENGO201827}, con la posterior y correspondiente comparación de los resultados obtenidos.
+
+    \item La evaluación y comparación del desempeño del filtro antes propuesto frente a los demás disponibles en la biblioteca.
+\end{itemize}
+
+Aclarada la metodología a seguir, en la sección \ref{sect:analisisResultados} se continuará con la presentación  y discusión de los resultados obtenidos en cada una de las subsecciones antes mencionadas, para concluir el artículo en la sección \label{sect:conclusiones}, donde  
+
+\chapter{Estado del arte}\label{sect:SOTA}
+
+\section{Fundamentación de ruido}
+
+En el contexto del aprendizaje automático supervisado, la calidad de los datos utilizados durante el entrenamiento tiene una influencia directa sobre el comportamiento de los modelos. Un conjunto de datos puede contener errores, inconsistencias o alteraciones que dificultan la identificación de patrones fiables. Este tipo de alteraciones se conocen de forma general como ruido en los datos.
+
+El ruido puede afectar a distintas partes de una instancia. Por un lado, puede aparecer en los atributos descriptivos, es decir, en las variables de entrada que representan cada ejemplo. Por otro lado, puede aparecer en la clase asociada a la instancia (es decir, a la variable objetivo), afectando directamente a la salida que el modelo debe aprender a predecir. Esta distinción permite diferenciar entre ruido de atributos y ruido de clase, respectivamente.
+
+A continuación abordamos ambos por separado.
+\subsection{Ruido de atributos}
+
+El ruido de atributos (conocido en la literatura anglosajona por \textit{attribute noise} o \textit{feature noise}), aparece cuando uno o varios valores de los atributos descriptivos de una instancia son incorrectos, imprecisos, incompletos o han sido alterados de alguna forma. En este caso, la etiqueta de clase asociada a dicha instancia puede ser correcta, pero la información utilizada para describir la instancia contendrá errores en aquellos atributos de entrada ruidosos (puediendo estar presente tanto en uno como en varios de ellos).
+
+Por la naturaleza de los modelos de clasificación supervisada, cuyos algoritmo tratan de identificar patrones, regularidades y relaciones útiles en los atributos de entrada para separar unas clases de otras, la presencia de ruido en estos (los atributos de entrada) puede llevar a los modelos a percibir una representación distorsionada de los ejemplos y aprender relaciones espúreas o menos precisas entre las variables de entrada y la de salida.
+
+Por otro lado, el ruido de atributos puede tener distintos orígenes, que van desde problemas de registro asociados a errores en la de medición (por sensores defectuosos, por ejemplo) o valores introducidos manualmente de forma incorrecta (voluntaria o involuntariamente\footnote{Un caso habitual es el sesgo de deseabilidad social, por el cual los encuestados tienden a proporcionar respuestas que proyectan una imagen más favorable de sí mismos\cite{althubaiti_information_2016}. Esto puede provocar que determinados comportamientos socialmente sensibles, como fumar, consumir alcohol o realizar ciertas prácticas de riesgo, sean infradeclarados. En consecuencia, el conjunto de datos puede contener valores de atributos incorrectos, aunque hayan sido introducidos aparentemente de forma válida.}), hasta problemas en el redondeo de los datos, codificaciones inconsistentes o integración de fuentes heterogéneas, entre otros motivos. 
+
+Este tipo de ruido puede afectar tanto a atributos numéricos como categóricos. En atributos numéricos puede aparecer como pequeñas perturbaciones, valores extremos, errores de escala o desviaciones respecto al valor real; mientras que en atributos categóricos puede manifestarse mediante categorías mal codificadas, valores asignados a una modalidad incorrecta o inconsistencias en la forma de representar una misma categoría. En cualquier caso, debe se debe procurar no confundirlos con las instancias atípicas (u \textit{outliers} en la lengua inglesa), las cuales, pese a poder presentar algún atributo con un valor totalmente alejado de la tendencia, esto no lo hace directamente un muestra incorrecta (pues tiene una explicación real y viable que pudiera no concibirse en un inicio).
+
+Desde el punto de vista del aprendizaje, el ruido de atributos distorsiona el espacio de características sobre el que trabaja el modelo. Una instancia afectada por ruido puede desplazarse artificialmente hacia una región del espacio correspondiente a otra clase, situarse cerca de una frontera de decisión o comportarse como un caso atípico totalmente alejado de los demás. Esto puede provocar fronteras de decisión menos estables, pérdida de capacidad discriminativa y reducción del rendimiento predictivo.
+
+Así, aunque el ruido de atributos no modifica directamente la clase objetivo, puede perjudicar de forma significativa el proceso de su aprendizaje, especialmente cuando afecta a variables muy relevantes para la clasificación. Su impacto depende con ello no solo de la importancia de la variable afectada, sino también del número de atributos afectados, de la intensidad del ruido, así como, por otro lado, de la robustez del algoritmo utilizado ante la presencia de dicho ruido.
+
+Lo anterior lleva a plantear un tratamiento del ruido de atributos tanto mediante técnicas de preprocesamiento, que tratarán de realizar una imputación o eliminación de aquellas variables o incluso instancias ruidosas; así como mediante el diseño de algoritmos de aprendizaje más robustos frente a perturbaciones (respecto del patrón global aparente) en las variables de entrada. 
+
+No obstante, tal y como se ha expuesto antes, en la apliación de técnicas enfocadas en solventar este problema, es importante actuar con suma cautela, pues no siempre una instancia con valores poco frecuentes será necesariamente ruidosa. Sino que podrá representar un caso minoritario, una región poco poblada (o poco densa) del espacio de entrada o una situación real, pero excepcional, que, en cualquiera de los casos antes propuestos, el modelo debe aprender. De modo que el tratamiento del ruido de atributos supone una constante búsqueda por equilibrar la eliminación o corrección de información defectuosa con la conservación de ejemplos válidos que aporten diversidad al conjunto de entrenamiento.
+
+
+\subsection{Ruido de clase}
+
+El ruido de clase aparece cuando una instancia tiene asignada una etiqueta incorrecta. Este tipo de ruido, también denominado \textit{class noise} o \textit{label noise}, afecta directamente a la variable objetivo que el modelo debe aprender a predecir.
+
+En clasificación supervisada, la clase asociada a cada ejemplo actúa como la respuesta correcta durante el entrenamiento. El algoritmo utiliza esa información para ajustar sus parámetros, construir reglas de decisión o definir fronteras entre clases. Por tanto, cuando una etiqueta es errónea, el modelo recibe una señal de aprendizaje incorrecta. Así en este caso la instancia puede estar correctamente descrita por un atributos completamente coherentes entre sí, pero asociados estos a una clase que no se corresponde con su verdadera naturaleza.
+
+De modo similar (cuando no igual) al ruido de atributo, el de clase puede producirse por errores humanos de anotación, ambigüedad entre categorías, discrepancias entre expertos, cambios en los criterios de clasificación, entre otros motivos. Por ejemplo, en un problema médico, un paciente puede tener correctamente registrados sus atributos clínicos, pero estar asociado a un diagnóstico equivocado. En ese caso, el problema no estaría en la descripción de la instancia, sino en la etiqueta utilizada como salida esperada.
+
+Este tipo de ruido suele considerarse especialmente perjudicial, pues mientras que el de atributo puede verse parcialmente relajado en problemas en los que se manejen varias variables de entrada o en los que el atributo ruidoso no es de gran importancia, en este caso la imprecisión en la anotación de la clase asociada a una instancia altera directamente el objetivo del aprendizaje, pues sesga las recompensas que el modelo recibe en el mismo. Como consecuencia, el clasificador puede por ejemplo interpretar como válidas relaciones que en realidad son erróneas así como ajustar incorrectamente fronteras de decisión.
+
+Análogamente, el impacto del ruido de clase depende del porcentaje de etiquetas erróneamente registradas, del nivel de error (en tanto en cuanto si una instancia ruidosa se encuentra rodeada de muestras pertencientes a otra clase, en un frontera, ...), del tipo de modelo utilizado (o más específicamente, de su robustez ante este tipo de ruido). Una etiqueta incorrecta en una zona densamente poblada puede generar contradicciones evidentes con las instancias vecinas. En cambio, una etiqueta incorrecta cerca de una frontera de decisión puede ser más difícil de detectar, ya que puede confundirse con un ejemplo difícil o ambiguo.
+
+En la literatura suele realizarse una distinción entre ruidos de clase tal y como sigue:
+\begin{itemize}
+    \item \textbf{Ruido completamente aleatorio}: aparece cuando cualquier etiqueta puede ser alterada con una determinada probabilidad, independientemente de la clase original a la que perteneciera así como de los atributos de asociados a la instancia.
+
+    \item \textbf{Ruido dependiente de la clase}: se produce cuando algunas clases tienen mayor probabilidad de confundirse con otras\footnote{Como puede suceder, como se ha mencionado antes, voluntariamente como causa del sesgo de deseabilidad.}.
+
+    \item \textbf{Ruido dependiente de los atributos}: aparece cuando la probabilidad de que una etiqueta sea incorrecta depende de las características concretas de la instancia, por ejemplo en regiones cercanas a las fronteras de decisión.
+\end{itemize}
+Existe también la división del ruido entre completamente aleatorio (o \textit{NCAR} en inglés, por \textit{Noise Completely At Random}), dependiente de la clase (o \textit{NAR} en inglés, por \textit{Noise At Random}) o dependiente de la clase y la combinación de atributos (o \textit{NNAR} en inglés, por \textit{Noise Not At Random}).
+
+
+La presencia de ruido de clase justifica así el uso de técnicas de tratamiento de ruido, especialmente métodos de filtrado de instancias, los cuales intentan identificar ejemplos cuya etiqueta parece inconsistente respecto al comportamiento del resto del conjunto de datos. Para ello estas técnicas suelen comparar la clase asignada a una instancia con la clase estimada por sus vecinos haciendo uso de clasificador  auxiliar o por un conjunto de los mismos.
+
+Sin embargo, nuevamente, eliminar instancias sospechosas también implica cierto riesgo. No toda instancia mal clasificada por un filtro es necesariamente ruidosa. Algunas instancias pueden ser ejemplos raros, minoritarios o difíciles, pero válidos, como lo pueden ser clases minoritarias o situadas en regiones de menor densidad que las clases que las rodean. Por esta razón, los métodos de filtrado deben buscar un equilibrio entre eliminar ejemplos probablemente mal etiquetados y conservar información útil para el aprendizaje.
+
+
+
+ \section{Tratamiento de ruido}
+
+ Como se ha expuesto anteriormente, la presencia de ruido en los datos puede afectar negativamente al proceso de aprendizaje, reduciendo la capacidad predictiva de los modelos al dificultar la identificación de patrones fiables.
+
+ Debido a esta pérdida de rendimiento, diversos trabajos han señalado la necesidad de emplear técnicas específicas para mitigar los efectos del ruido en los datos \cite{zhu2004class}. En la literatura especializada se suelen distinguir dos grandes estrategias para abordar este problema: la adaptación de los algoritmos de aprendizaje para que sean más robustos frente al ruido y el preprocesamiento de los datos con el objetivo de detectar, corregir o eliminar las instancias problemáticas.
+
+ La primera estrategia consiste en modificar o diseñar algoritmos capaces de manejar adecuadamente la presencia de ruido durante el propio proceso de aprendizaje. Estos métodos suelen denominarse \textit{robust learners}, ya que tratan de reducir la influencia de los ejemplos ruidosos sobre el modelo final. Algunos algoritmos clásicos, como C4.5 \cite{quinlan1993c45} o determinados métodos de inducción de reglas \cite{cohen1995fast}, incorporan mecanismos que pueden hacerlos menos sensibles a ciertos tipos de ruido. Sin embargo, esta aproximación presenta una limitación importante: su efectividad depende directamente del algoritmo utilizado, no puediendo necesariamente trasladar la misma solución a problemas en los que se requieren otros modelos de aprendizaje (donde deberíamos considerar la dificultad o siquiera posibilidad inherente de adaptar un algoritmo existente).
+
+ La segunda estrategia se basa en actuar sobre los datos antes de entrenar el modelo. En este caso, se introduce una etapa de preprocesamiento cuyo objetivo es identificar las instancias sospechosas de contener ruido, para posteriormente eliminarlas o corregirlas \cite{brodley1999identifying,gamberger1999experiments}. Esta aproximación tiene la ventaja de ser agnóstica al clasificador que le suceda, ya que el aprendizaje se realiza sobre un conjunto de datos previamente depurado. No obstante este acercamiento presenta también inconvenientes, pues puede incrementar el coste computacional del proceso al añadir una fase adicional antes del entrenamiento, así como que muchos de estos métodos están diseñados para detectar un tipo concreto de ruido, no siendo con ello globalmente generalizables, lo que puede dificultar el problema cuando se desconoce la naturaleza del ruido subyacente en los datos a emplear.
+
+ Por estas razones, el tratamiento del ruido sigue siendo un aspecto relevante dentro del aprendizaje automático. Resulta especialmente interesante estudiar mecanismos que permitan reducir sus efectos sin necesidad de modificar cada algoritmo de clasificación de forma individual y sin asumir de antemano un tipo o nivel concreto de ruido en los datos. En este contexto, los métodos de filtrado aparecen como una alternativa especialmente adecuada, ya que separan la fase de detección de ruido de la fase de aprendizaje del modelo.
+
+ \subsection{Sobre el filtrado como alternativa para el tratamiento de ruido}
+
+ Formalmente, en la descripción de los métodos de filtrado suele denotarse por $TR$ al conjunto de entrenamiento original, por $FS$ al conjunto filtrado resultante y por $ND$ al conjunto de instancias identificadas como ruidosas. Inicialmente, $ND$ se encuentra vacío, ya que ninguna instancia ha sido todavía marcada como ruido. Durante la ejecución del filtro, aquellas instancias consideradas sospechosas son incorporadas a $ND$ y, normalmente, eliminadas de $TR$ para formar el conjunto filtrado $FS$. Algunos métodos también emplean una partición del conjunto de entrenamiento en $nf$ subconjuntos o \textit{folds}, especialmente cuando la detección de ruido se basa en esquemas de validación cruzada.
+
+ Aunque la hipótesis subyacente sea que, al reducir la presencia de ruido, el modelo podrá aprender fronteras de decisión más representativas y generalizar mejor sobre datos no vistos, el filtrado también debe aplicarse con cautela. Eliminar demasiadas instancias puede provocar pérdida de información útil, especialmente en regiones cercanas a las fronteras de decisión, donde los ejemplos pueden parecer ambiguos sin ser realmente erróneos. Del mismo modo, un filtro demasiado conservador puede dejar en el conjunto de entrenamiento una cantidad significativa de ruido, reduciendo su utilidad. Por ello, tal y como discutiremos posteriormente, al evaluar este tipo de métodos no basta con medir únicamente la precisión final del clasificador, sino que también resulta importante analizar otros aspectos, como el porcentaje de instancias eliminadas, la capacidad del filtro para identificar correctamente ejemplos ruidosos, el coste computacional del proceso y el impacto real sobre el rendimiento predictivo.
+
+ En consecuencia, los métodos de filtrado constituyen una alternativa relevante para el tratamiento del ruido en aprendizaje automático. Su interés reside en que permiten mejorar la calidad de los datos antes del entrenamiento, manteniendo cierta independencia respecto al clasificador utilizado. Esta característica los convierte en una opción adecuada cuando se desea diseñar o evaluar herramientas generales de tratamiento de ruido, especialmente en contextos donde no se conoce de antemano la naturaleza exacta del ruido presente en los datos.
+
+ \subsection{Sobre el reetiquetado como alternativa para el tratamiento de ruido}
+
+
+\chapter{Descripción de la biblioteca}\label{sect:descBiblio}
+
+\section{Aspectos sobre la implementación}
+
+ \subsection{Compatibilidad con \textit{scikit-learn}}
+ Una \href{https://github.com/search?q=machine+learning+language%3APython&type=repositories&l=Python&s=stars&o=desc}{búsqueda en GitHub} del concepto "Machine Learning", filtrando por aquellos repositorios relacionados al lenguaje de programación \textit{python} y ordenada descendentemente segú el número de estrellas asociado, nos mostrará en el cuarto puesto la librería \href{https://github.com/scikit-learn/scikit-learn}{scikit-learn}, superada solo por 2 repositorios enfocados en grandes modelos de lenguaje (o \textit{LLM}s, por su nomenclatura inglesa) y otro que reune grandes conjuntos de módulos y librerías de diferentes lenguajes de programación y relacionados al aprendizaje automático. En vista de lo anterior, e inspirados por la librería \href{https://github.com/scikit-learn-contrib/imbalanced-learn}{imbalanced-learn}, hemos considerado de interés capital diseñar no solo una librería que recogiera todos los filtros antes mencionados ..., sino que además siguiera la misma lógica y fuera compatible con scikit-learn.
+
+ De tal modo la biblioteca se ha diseñado siguiendo una interfaz tipo scikit-learn, implementando dos tipos de objetos:
+ \begin{itemize}
+     
+     \item \textbf{Generadores de ruido (\texttt{noislearn.noisers}):} encargados de distorsionar los datos de entrada con un tipo de ruido dado por el generador empleado.
+     
+     \item \textbf{Filtros de ruido (\texttt{noislearn.filters}):} encargados de detectar y remover o corregir instancias detectadas como ruidosas según el filtro empleado.
+     
+ \end{itemize}
+
+ Ambos tipos de objetos desempeñan su labor a partir del método \texttt{object.fit\_resample(X,y)}\footnote{Cabe resaltar que, como hace la librería imbalanced-learn, se ha decidido usar este método en lugar del usualmente usado para transfomar los datos \texttt{TransformerMixin.fit\_transform(X,y,...)} porque, tal y como indica la documentación de scikit-learn, los transformadores deben siempre devolver el mismo número de instancias de salida que las de entrada (algo que no cabría esperar de los filtros de ruido realizaran).}, el cual, dados los atributos de entrada en \texttt{X} y la variable objetivo en \texttt{y}, devuelve los mismos dos elementos modificados según el objeto (generador de ruido o filtro) empleado.
+
+ Para el uso de los objetos anteriores dentro de un pipeline se requiere emplear el mismo objeto \texttt{Pipeline} definido en la biblioteca (o alternativamente \href{https://imbalanced-learn.org/stable/references/generated/imblearn.pipeline.Pipeline.html}{el de la biblioteca imbalanced-learn}, que es exactamente el mismo).
+
+ 
+
+\section{Métodos incluidos}
+
+ \subsection{Métodos de generación de ruido de clase}
+ Los métodos de generación de ruido de clase implementados en la biblioteca en el submódulo \texttt{noisers} son:
+ \begin{itemize}
+    \item \texttt{URLFNoise}: Genera ruido independiente de la clase seleccionando aleatoriamente una fracción global de las etiquetas y reasignándolas aleatoriamente a otra clase.
+    \item \texttt{NARNoise}: Genera ruido dependiente de la clase, de modo que cada clase puede tener una probabilidad distinta de ser alterada. Estas probabilidades pueden fijarse manualmente o generarse aleatoriamente dentro de un rango.
+ \end{itemize}
+ 
+ \subsection{Métodos de filtrado de ruido de clase}
+ Los filtros disponibles en la biblioteca son los siguientes:
+ \begin{itemize}
+ 
+    \item \texttt{ENNFilter}: implementa \emph{Edited Nearest Neighbour} y \emph{Modified Edited Nearest Neighbour}. El primero parte del conjunto de entrenamiento completo y elimina cada instancia cuya clase no coincide con la mayoría de sus $k$ vecinos más cercanos. El segundo añade a la lista de vecinos con que compara todos aquellos a una misma distancia que el más lejano. Adicionalmente no emplea un solo valor $k$ apara filtrar sino ...Furthermore, MENN works with a prefixed number of pairs (k,k'). k is employed as the number of neighbors used to perform the editing process, and k' is employed to validate the edited set FS obtained. The best pair found is employed as the final reference set. If two or more sets are found to be optimal, then both are used in the classification of the test instances. A majority rule is used to decide the output of the classifier in this case.
+    
+    \item \texttt{ENNProbFilter} : implementa \emph{ENNProbabilistic} y \emph{ENNProbabilisticThreshold}, ambas variantes probabilísticas de ENN. En ambos la clase de cada instancia se decide mediante una probabilidad ponderada sobre la distancia de los $k$ vecinos más cercanos. El segundo utiliza adicionalmente un umbral para descartar clases con una baja confianza.
+    
+    \item \texttt{AllKNN}: extensión de ENN en la que se aplica la regla de vecino más cercano de forma progresiva incrementando el número de vecinos considerados desde 1 hasta un valor $k$ dado.
+    
+    \item \texttt{NCNEdit}: implementa \emph{Nearest Centroid Neighbor Edition}. Define el vecindario de cada instancia teniendo en cuenta la proximidad de los prototipos y su distribución alrededor del ejemplo mediante vecinos centroidales. Es decir, para cada instancia $x$ a filtrar comienza buscando su vecino más cercano, para a continuación añadir de uno en uno $k$ vecinos de modo iterativo tal que en cada paso el centroide definido por los mismo vecinos minimice la distancia a la instancia $x$. 
+    
+    \item \texttt{MultiEditFilter}: método iterativo que divide el conjunto de entrenamiento en bloques estratificados y aplica una regla kNN entre bloques sucesivos para eliminar las instancias mal clasificadas. Separada de forma aleatoria y estratificada los datos iniciales en $b$ subconjuntos indexados $R_i : i=1,2,...,b$, para predecir las etiquetas de cada conjunto $R_i$ a partir de un KNN entrenado en el que le sucede  $R_{(i-1)_{mod(b)}}$. De tal modo las instancias incorrectamente clasificadas son filtradas y eliminadas del conjunto de datos. Este proceso se repite iterativamente, realizando en cada paso diferentes particionamientos de los datos, hasta que se cumpla una condición de parada dada (como un porcentaje de instancias filtrado, que no se filtren más instancias, ...)
+    
+    \item \texttt{ClassificationFilter}: filtro basado en un clasificador arbitrario  y validación cruzada estratificada. Se particionnan los datos de manera estratificada y aleatoria en $b$ subconjuntos (o \textit{folds}). A continuación, para cada particionamiento se entrena un algoritmo de clasificación en los $b-1$ restantes, obteniendo con ello $b$ clasificadores, los cuales se emplearán cada uno por separado en el subconjunto en el que no han sido entrenados, etiquetando como ruidosas aquellas instancias incorrectamente clasificadas. 
+
+    \item \texttt{EnsembleFiltering}: generaliza la propuesta anterior entrenando no solo un clasificador a emplear en la particion sobre la que no ha sido entrenado, sino clasificando como ruidosas las instancias mediante un voto (por mayoría, consenso o umbral) realizado por un conjunto de clasificadores. Es decir, nuevamente el conjunto de entrada es dvidido en $b$ particiones, de modo que para cada una se entrena un \textit{ensemble} de clasificadores en las otras $b-1$ particiones, para posteriormente clasificar como ruidosas o no (según un voto) las instancias haciendo uso del ensemble de clasificadores sobre el que no ha sido entrenada.
+
+    
+    \item \texttt{CVCFFilter}: implementa \emph{Cross-Validated Committees Filter}. Sigue una propuesta muy similar a la anterior. Sin embargo, en lugar de usar cada ensemble para realizar predicciones solo sobre la partición sobre las que no ha sido entrenado, todos los clasificadores entrenados se emplean para etiquetar (mediante voto) como ruidosas o no todas las instancias del conjunto de entrada.
+    
+    
+    \item \texttt{IterativePartitioningFilter}: realiza un filtrado iterativo basado en particiones estratificadas y votación entre modelos. El proceso se repite hasta cumplir un criterio de parada basado en el número de instancias detectadas en cada iteración. Es decir, inicialmente particiona los datos de entrada en $b$ subconjuntos, entrenando sobre cada uno de ellos un clasificador. Posteriormente se emplean los $b$ clasificadores para etiquetar como ruidosas las instancias de todo el conjunto de datos, removiendo aquellas incorrectamente predichas. El proceso es repetido con el conjunto restante hasta cumplir una condición de parada dada.
+    
+    \item \texttt{TomekLinks}: una conexión de Tomek se define como un par de instancias ($x_1$,$x_2$) de clases diferentes tal que para cada una de ellas no existe otra instancia $x_3$ de una clase diferente a una menor distancia. Matemáticamente $\nexists x_3 : d(x_1,x_2)> d(x_1,x_3),\ d(x_2,x_3)$· Este tipo de pares de puntos suelen encontrarse en fronteras de decisión o en regiones mahoritariamente pobladas por una de las dos clases (puediendo con ello, aunque no determinantemente, suponer ruido). De modo que tras detectar cada conexión de Tomek del conjunto de datos, todo par es removido del mismo. 
+    
+ \end{itemize}
+
+ \subsection{Métodos de limpieza de ruido de clase}
+ Las técnicas implementadas en la biblioteca son las siguientes:
+ \begin{itemize}
+     
+     \item  \texttt{CNCNOS}: por el nombre \textit{Classification Noise Cleaning with NOise Score}, esta técnica aplica el poder de los filtros para etiquetar como sospechas instancias potencialmente ruidosas. Para ello sigue en orden el siguiente esquema:
+        \begin{enumerate}
+            
+            \item Dado el conjunto inicial de entrenamiento TR, somete el mismo a un ensembles de filtros (de ruido de clase) para conformar un conjunto $N_F$ a partir de las instancias etiquetadas como potencialmente ruidosas según el voto por mayoría resultante del anterior ensemble.
+
+            \item Construido el conjunto $N_F$, para todas y cada una de las instancias (potencialmente ruidosas) $e_i$ del mismo se computa su nivel de ruido $wNS(e_i)$ (por \textit{weighted Noise Score}), dado por la ecuación \ref{eq:cncnos_wNS}:
+
+            \begin{equation}\label{eq:cncnos_wNS}
+                wNS(e_i) = confidence(e_i) \cdot \overline{neighborhood}(e_i)
+            \end{equation}
+            Con:
+            \begin{equation}
+                confidence(e_i) = \frac{1}{1 + t(e_i)^2}
+            \end{equation}
+            Y:
+            \begin{equation}
+                \overline{neighborhood}(e_i) =
+                \frac{
+                \sum_{j=1}^{k}
+                \overline{clean}(e_j) \cdot confidence(e_j) \cdot differentClass(e_i, e_j)
+                }{k}
+            \end{equation}
+            Tal que:
+            \begin{equation}
+                \overline{clean}(e_i) =
+                \frac{
+                \sum_{j=1}^{k} d_{ij}
+                +
+                isNoise(e_i) \cdot
+                \left(
+                \sum_{\substack{j=1 \\ e_j \in N_F}}^{k} d_{ij}
+                -
+                \sum_{j=1}^{k} d_{ij}
+                \right)
+                }{
+                2 \cdot \sum_{j=1}^{k} d_{ij}
+                }
+            \end{equation}
+            \begin{equation}
+                isNoise(e_i) =
+                \begin{cases}
+                1, & \text{if } e_i \in N_F,\\
+                -1, & \text{if } e_i \notin N_F.
+                \end{cases}
+            \end{equation}
+            \begin{equation}
+                differentClass(e_i, e_j) =
+                \begin{cases}
+                1, & \text{if } class(e_i) \neq class(e_j),\\
+                -1, & \text{if } class(e_i) = class(e_j).
+                \end{cases}
+            \end{equation}
+            Donde $confidence(e_i)$ mide el como de valiosa es la información obtenida del vecindario de la instancia $e_i$; y $neighborhood(e_i)$ mide el nivel de concoordancia de la intancia $e_i$ con su vecindario, pesando la intervención de cada vecino $e_j$ según la distancia entre ambos. 
+
+            \item Una vez calculadas las puntuaciones de ruido de cada instancia, se decide si mantener (dentro del conjunto de entrenamiento), reetiquetar o eliminar la instancia $e_i$ en el siguiente orden de prioridades:
+            \begin{enumerate}
+                \item Si  $wNS(e_i)\leq0$ se mantiene.
+                \item Si todos los filtros de clase coinciden en predecir la misma clase $C_i$, se reetiqueta por esta.
+                \item Si más de la mitad de los filtros coinciden en predecir la misma clase $C_i$ y $wNS(e_i)\geq\overline{wNS(e_i)}$ se reetiqueta.
+                \item Se elimina en cualquier otro caso.
+            \end{enumerate}
+        \end{enumerate}
+        De modo que la clase asociada a una instancia potencialmente mal etiquetada será sustituida si todos los filtros coinciden en sus predecciones, o si la mayoría lo hacen y se calcula una puntuación de ruido de la instancia $e_i$ ($wNS(e_i)$) mayor al promedio ($\overline{wNS(e_i)}$).\\
+
+        El proceso anterior se repetirá hasta cumplir una condición de parada (máximo número de iteraciones, hasta que no haya cambios, ...).
+ \end{itemize}
+
+ 
+    \begin{figure}[htbp]
+        \centering
+        \begin{lstlisting}[style=mystyle, caption={Ejemplo básico de uso de \texttt{noislearn}}]
+        from sklearn.datasets import make_classification
+        from sklearn.model_selection import train_test_split
+        from noislearn.noisers import NARNoiseGenerator
+        from noislearn.filters import ENN
+        # 1. Generar un conjunto de datos de ejemplo
+        X, y = make_classification(
+            n_samples=1000,
+            n_features=20,
+            n_informative=15,
+            n_redundant=5,
+        )
+        # 2. Separar datos en entrenamiento y prueba
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        # 3. Añadir ruido a las etiquetas del conjunto de entrenamiento
+        noiser = NARNoiseGenerator(noise_rate=0.2, random_state=42)
+        X_train_noisy, y_train_noisy = noiser.fit_resample(X_train, y_train)
+        # 4. Aplicar un filtro de ruido
+        filter_ = ENN()
+        X_clean, y_clean = filter_.fit_resample(X_train, y_train_noisy)
+        \end{lstlisting}
+        \caption{Código con ejemplo de uso de la biblioteca.}
+        \label{fig:casoDeUso}
+    \end{figure}
+
+
+
+\section{Ejemplos de uso}
+ \subsection{Uso básico de la biblioteca}
+ En la figura \ref{fig:casoDeUso} mostramos un ejmejmplo de uso de la biblioteca. Más específica, pero brevemente, dado el conjunto de datos generado por la función \texttt{make\_classification}, se muestra como primero se le añade ruido y posteriormente se filtran. A continuación estudiemos cada parte por separado: 
+
+ \paragraph{1. Generación de datos}
+ \begin{lstlisting}[style=mystyle]
+    from sklearn.datasets import make_classification
+    X, y = make_classification(
+        n_samples=1000,
+        n_features=20,
+        n_informative=15,
+        n_redundant=5,
+    )
+ \end{lstlisting}  
+ Se genera un conjunto de datos sintético de clasificación con 1000 muestras y 20 variables.
+ 
+ \paragraph{2. División en entrenamiento y prueba}
+ \begin{lstlisting}[style=mystyle]
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
+ \end{lstlisting}
+ Se separan los datos para reservar un 20\% como conjunto de prueba. Hasta este punto no se ha usado nada de la biblioteca, lo que sí se hace en el paso posterior.
+    
+ \paragraph{3. Añadido de ruido}
+ \begin{lstlisting}[style=mystyle]
+    from noislearn.noisers import NARNoiseGenerator
+    noiser = NARNoiseGenerator(noise_rate=0.2, random_state=42)
+    X_train_noisy, y_train_noisy = noiser.fit_transform(X_train, y_train)
+ \end{lstlisting}
+ Se crean el conjunto de datos ruidosos (X\_train\_noisy, y\_train\_noisy) de forma completamente aleatoria a partir de las etiquetas del conjunto de entrenamiento (X\_train\_noisy, y\_train\_noisy).
+    
+ \paragraph{4. Filtrado del ruido}
+ \begin{lstlisting}[style=mystyle]
+    from noislearn.filters import ENN
+    filter_ = ENN()
+    X_clean, y_clean = filter_.fit_resample(X_train, y_train_noisy)
+ \end{lstlisting}
+ Por último se aplica un filtro `ENN` para generar un conjunto filtrado (X\_clean, y\_clean) a partir de los ejemplos afectados por ruido (X\_train\_noisy, y\_train\_noisy).
+
+ Cabe resaltar que lo anterior sirve de muestra de que, siguiendo la misma filosofía de la biblioteca scikit-learn, los transformadores aquí empleados no cambian los datos de entrada, sino que generan unos nuevos a partir de los mismos. Es decir, al aplicar un transformador genérico de la forma \texttt{transformador\_generico(X,y)}, este no altera de ningún modo el par (X,y), sino que devuelve un par nuevo generado a partir de la correspondiente transformación aplicada sobre el original.
+
+
+ \subsection{Uso de la biblioteca con \textit{scikit-learn}}
+ Como se mencionó anteriormente, pese a seguir una arquitectura inspirada en la de la librería scikit-learn, esta no cuenta con ningún tipo de transformador que retorne menos instancias de las pasadas como parámetro, pues por definición están diseñados para no hacerlo. Por ello, para poder unir el potencial de la biblioteca aquí propuesta con todo lo mostrado en scikit-learn tenemos principalmente dos alternativas:
+ \begin{itemize}
+     
+     \item Realizar y almacenar las transformaciones de los datos necesarias de manera sucesiva (tal y como se hace en el ejemplo de uso de a figura \ref{fig:casoDeUso}), para posteriormente introducir estos en la función de scikit-learn deseada.
+     
+     \item Si se desearan realizar labores más automatizadas, con el uso de funciones de scikit-learn como \texttt{cross\_validate} o \texttt{GridSearchCV}, se debería incluir el generador de ruido o el filtro deseado, dentro de un pipeline como el propuesto por la librería imbalanced-learn (el cual se ha copiado para la aquí propuesta). La razón de necesitar dicho pipeline, no siendo válido el de scikit-learn, se encuentra en que el de la segunda no está adaptado para aplicar transformaciones mediante el método \texttt{.fit\_resample()} (por eso de que scikit-learn no cuenta con objetos enfocados en remuestrear, bien por eliminación o bien por sustitución, un conjunto de instancias inicial dado).  
+     
+ \end{itemize}
+
+
+
+
+\chapter{Propuesta}\label{sect:propuesta}
+\section{Motivación}
+Como se ha mostrado antes, la biblioteca \textit{nois-learn} incorpora diversos filtros de ruido para datos tabulares basados tanto en similitudes (o distancias) como en el empleo de clasificadores base auxiliares. En este contexto, resulta natural (así como hasta donde nuestro conocimiento alcanza, innovador) explorar si un clasificador tabular de estado del arte como \textit{TabPFN}\cite{hollmann2023tabpfntransformersolvessmall} puede mejorar el proceso de detección de instancias ruidosas dentro de un esquema de filtrado ya existente. En especial, en comparación con las técnicas más comunmente aplicadas.\\
+
+A diferencia de clasificadores auxiliares clásicos algo más flexibles, \textit{TabPFN} está diseñado específicamente para datos tabulares y se apoya en un enfoque fundacional entrenado sobre una gran variedad de tareas sintéticas. Esto lo convierte en un candidato atractivo para actuar como clasificador base dentro de un filtro de ruido de clase, ya que, gracias a las ventajas inherentes de a los modelos basados en transformers, podría capturar relaciones complejas entre atributos y etiquetas con mayor precisión que modelos más simples (ello, claro está, con muy posiblemente un mayor costo computacional). En consecuencia, su uso podría traducirse en una mejor identificación de instancias sospechosas y en una reducción más efectiva del ruido presente en el conjunto de entrenamiento.
+\section{Objetivos}
+De tal modo este estudio se propone, de forma ordenada, los siguiente tres objetivos:
+\begin{enumerate}
+    \item \textbf{Evaluar el rendimiento de TabPFN como clasificador base de filtrado de ruido.}
+    Se estudiará si sustituir el clasificador auxiliar de los filtros \texttt{ClassificationFilter}, \texttt{IPF} y \texttt{CVCF} por \textit{TabPFN} mejora la capacidad de detectar ruido de clase y el rendimiento final del modelo entrenado sobre los datos filtrados.
+    
+    \item \textbf{Analizar la explicabilidad del proceso de filtrado.}
+    Una vez discutido el desempeño del filtro se estudiará si la técnica de explicabilidad \textit{SHAP} permite interpretar qué atributos están influyendo en que una instancia sea considerada ruidosa. 
+    
+    \item \textbf{Explorar la generación automática de explicaciones para no expertos.}
+    Si las explicaciones obtenidas muestran información útil y coherente, se estudiará la posibilidad de emplear un LLM pequeño para transformar dichas salidas en explicaciones en lenguaje natural, orientadas a usuarios no expertos.
+\end{enumerate}
+
+
+\section{Explicabilidad}
+ \subsubsection{Valores SHAP}
+    Antes de introducir el diseño y funcionamiento del módulo de explicabilidad antes propuesto es conveniente introducir al lector los valores Shap\cite{lundberg2017unifiedapproachinterpretingmodel}.\\
+
+    
+   Históricamente el diseño de algoritmos de aprendizaje automático cada vez más flexibles y potentes ha sido realizado muchas veces a costa de una complicación en la explicabilidad de las decisiones que los mismos toman. Este problema resulta especialmente relevante en el contexto del filtrado de ruido de clase, ya que puede no basta únicamente con que un filtro marque una instancia como potencialmente ruidosa, sino que también es deseable conocer qué características han contribuido a dicha decisión. En este sentido, las técnicas de explicabilidad permiten complementar el proceso de filtrado proporcionando información adicional sobre el comportamiento del clasificador auxiliar.\\
+    
+    Dentro de este conjunto de técnicas, los valores SHAP, acrónimo de \textit{SHapley Additive exPlanations}, constituyen una de las aproximaciones más utilizadas para explicar predicciones individuales de modelos de aprendizaje automático \cite{lundberg2017unifiedapproachinterpretingmodel}. SHAP se basa en los valores de Shapley procedentes de la teoría de juegos cooperativos \cite{shapley1953value}, donde el objetivo es repartir de forma justa la contribución total obtenida por una coalición entre los distintos jugadores que participan en ella. Trasladado al contexto del aprendizaje automático, los ``jugadores'' son las variables de entrada del modelo, y la ``ganancia'' que se reparte es la diferencia entre la predicción realizada para una instancia concreta y una predicción base o esperada.\\
+    
+    De forma intuitiva, el valor SHAP asociado a una variable mide cuánto contribuye la misma a desplazar la predicción del modelo respecto a un valor de referencia. Si se considera un modelo predictivo $f$ y una instancia concreta $\mathbf{x} = (x_1, x_2, \ldots, x_p)$, la explicación aditiva proporcionada por SHAP puede expresarse, de manera independiente para cada una de las instancias (y esto último es de extrema relevancia, pues al contrario que métricas como la importancia de atributo --- o \textit{feature importance} --- reportada por modelos como los bosques aleatorios, los valores Shap no son colectivos, sino individuales), como:
+    
+    \[
+    f(\mathbf{x}) \approx \phi_0 + \sum_{j=1}^{p} \phi_j,
+    \]
+    
+    donde $\phi_0$ representa el valor base de la predicción (normalmente asociado a la salida media del modelo sobre un conjunto de referencia), y $\phi_j$ representa la contribución atribuida a la variable $j$ para la instancia $\mathbf{x}$ (remarcando de nuevo el hecho, pues, de que dichos pesos $\phi_j$, o contribuciones de cada atributo, esperablemente diferirán entre instancias). Por tanto, cada predicción individual se descompone en una suma de contribuciones atribuibles a las distintas variables de entrada.\\
+    
+    El signo y la magnitud de cada valor SHAP permiten interpretar el efecto de cada atributo sobre la predicción. Un valor SHAP positivo indica que la característica correspondiente empuja la predicción hacia la clase o salida explicada, mientras que un valor negativo indica que la aleja de ella. A su vez, cuanto mayor sea el valor absoluto de $\phi_j$, mayor será la influencia de la variable $j$ en la predicción concreta que se está explicando. De tal modo esta interpretación local es especialmente útil cuando se desea analizar por qué una instancia concreta ha sido clasificada de una determinada manera, en lugar de limitarse a estudiar la importancia global de las variables sobre todo el conjunto de datos, pues la detección de instancias ruidosas se trata de un problema individual, no global o colectivo.\\
+    
+    Naturalmente puede surgir en el lector la cuestión de como son computados dichos valores cuando se trabaja en escenarios de clasificación multiclase (pues téngase en cuenta que hasta el momento no hemos limitado esta técnica a ningún dominio respecto de la variable a predecir, así como tampoco del modelo a explicar). En tales casos, así como las probabilidades suelen computarse por cada clase (bien comparando una con todas las demás, siguiendo un esquema OVA; o según comparaciones a pares, en un esquema OVO) los valores SHAP suelen calcularse respecto a una clase concreta. Es decir, para una instancia dada, puede estudiarse qué variables han contribuido a aumentar o disminuir la probabilidad asignada por el modelo a una determinada clase. Es decir, estos valores pueden explicar tanto el motivo por el que una instancia ha sido asignada a una determinada clase, como aquellos por los que ha sido excluida de todas y cada una de las restantes. En el caso que nos atañe, de filtrado de ruido de clase, esto permite analizar las razones por las que el clasificador auxiliar predice una etiqueta distinta de la original. Así, si una instancia con etiqueta observada $y_i$ es clasificada por el filtro como perteneciente a otra clase $\hat{y}_i$, los valores SHAP pueden emplearse para identificar qué atributos han favorecido la predicción $\hat{y}_i$ y, por tanto, qué evidencias ha utilizado el modelo para considerar sospechosa la etiqueta original. El uso de valores SHAP permite pues enriquecer esta decisión proporcionando una justificación local basada en atributos concretos.\\
+    
+    Por ejemplo, para una instancia marcada como ruidosa según el clasificador base a emplear en la técnica de filtrado, el análisis SHAP puede mostrar que ciertos atributos empujan fuertemente la predicción hacia una clase distinta de la etiqueta original. En tal caso, la instancia podría interpretarse como coherente con la clase predicha por el modelo y, por tanto, como candidata razonable a contener ruido de clase. Por el contrario, si las contribuciones son débiles, contradictorias o dependen de pocos atributos poco informativos, la decisión del filtro debería interpretarse con mayor cautela. De este modo, SHAP no sustituye al criterio de filtrado, pero sí proporciona una capa adicional de información que ayuda a comprender y auditar las decisiones tomadas por el filtro.\\
+    
+
+
+
+ 
+ \subsubsection{Implementación en la biblioteca}
+    En la biblioteca propuesta se emplean así los valores SHAP con la finalidad de  explicar instancias concretas que han sido (o no) marcadas como potencialmente ruidosas por el filtro. Para ello, se analizan las variables con mayor contribución absoluta sobre la predicción realizada por el clasificador auxiliar. En particular, se considera de interés identificar los $k$ (parámetro a decidir por el analista) atributos con mayor influencia sobre la clase predicha por el modelo, junto con la confianza asociada a dicha predicción. Esta información permite construir una explicación más interpretable del tipo: la instancia ha sido marcada como sospechosa porque, aunque su etiqueta original es $y_i$, el modelo predice la clase $\hat{y}_i$ con una determinada confianza, principalmente debido a los valores observados en ciertos atributos relevantes.\\
+    
+    No obstante, es importante señalar que los valores SHAP deben interpretarse como explicaciones del comportamiento del modelo, el cual puede encontrarse sesgado o no ser el idóneo de cara a la tarea a resolver, no debiendo de confundir dichos valores con relaciones causales presentes en los datos. Es decir, SHAP indica qué variables han influido en la predicción realizada por el clasificador auxiliar, pero no garantiza que dichas variables sean la causa real de que una instancia esté mal etiquetada.\\
+    
+    En consecuencia, dentro de la propuesta desarrollada, SHAP se plantea como una herramienta de apoyo para la interpretabilidad del proceso de filtrado. Su objetivo no es demostrar de forma absoluta que una instancia contiene ruido, sino proporcionar evidencias comprensibles sobre por qué el clasificador auxiliar ha considerado que su etiqueta observada no es coherente con sus atributos. Esta información resulta útil tanto para el análisis experimental del método como para una posible inspección manual posterior por parte de usuarios expertos o no expertos. Potenciaría así la extracción de conocimiento a la par que la justificación en la toma de decisiones. \\
+    
+ 
+ Con tal objetivo en mente la API correspondiente a los filtros basados en TabPFN vienen acompañadas del método \texttt{.explain\_noisy\_instances(...)}, el cual retorna un análisis sobre las decisiones tomadas a la hora de clasificar como potencialmente ruidosas las instancias a filtrar. Más específicamente, el mismo método devuelve para cada una de las instancias que se deseen estudiar (hayan o no sido marcadas como potencialmente ruidosas) un diccionario como el de la figura \ref{fig:TPFN_explainabilityDict}. Este cuenta, en el orden en que se muestra, para cada una de las instancias a explicar, con el índice original, el fold en la validación cruzada subyacente al filtro, la etiqueta original, la etiqueta asignada/predicha por el filtro, la confianza de dicha predicción y el top de los $k$ atributos con un mayor valor SHAP asociado a dicha predicción 
+
+
+\begin{figure}[h]
+    \centering
+    \begin{minipage}{0.75\linewidth}
+\begin{verbatim}
+{
+    "sample" : e.sample,
+    "fold" : e.fold,
+    "true" : e.true,
+    "oof_pred" : e.oof_pred,
+    "confidence" : e.confidence,
+    "top_k" : e.top_k
+}
+\end{verbatim}
+    \end{minipage}
+    \caption{Estructura del informe a nivel de instancia retornado por los clasificadores basados en TabPFN en su etiquetado de instancias como potencialmente ruidosas.}
+    \label{fig:TPFN_explainabilityDict}
+\end{figure}
+
+ 
+ Como se decía anteriormente, el anterior diccionario permite con ello desarrollar argumentaciones del tipo: 
+ 
+ \begin{quote}
+  La instancia correspondiente al  índice \texttt{e.sample}, con etiqueta original \texttt{e.true} ha sido marcada como ruidosa según el filtro empleado por corresponderle con un \texttt{e.confidence}*100 por ciento de confianza la clase \texttt{e.oof\_pred}. Dicha decisión se ve justificada, en orden decreciente de contribución por la lista de $k$ pares (atributo, coeficiente\_shap)  \texttt{e.top\_k}.
+ \end{quote}
+
+\subsection{Ejemplo de uso}
+
+
+
+
+
+
+
+
+
+
+
+
+
+\chapter{Metodología de evaluación experimental} \label{sect:metodología}
+
+    \begin{table*}[b!]
+        \footnotesize
+        \caption{Conjuntos de datos base a usar en la evaluación del funcionamiento de los filtros implementados en \texttt{nois-learn}.}
+        \label{tab:base-datasets}
+        \hspace{-0.75cm}
+        \begin{tabular}{lccc lccc}
+        \toprule
+        Dataset & \#Atributos (R/I/N) & \#Examples & \#Classes &
+        Dataset & \#Atributos (R/I/N) & \#Examples & \#Classes \\
+        \midrule
+        automobile    & 25 (15/0/10) & 150 (205) & 6  & penbased  & 16 (0/16/0)  & 10,992 & 10 \\
+        car           & 6 (0/0/6)    & 1728      & 4  & phoneme   & 5 (5/0/0)    & 5404   & 2  \\
+        cleveland     & 13 (13/0/0)  & 297 (303) & 5  & pima      & 8 (8/0/0)    & 768    & 2  \\
+        dermatology   & 34 (0/34/0)  & 358 (366) & 6  & ring      & 20 (20/0/0)  & 7400   & 2  \\
+        ecoli         & 7 (7/0/0)    & 336       & 8  & satimage  & 36 (0/36/0)  & 6435   & 7  \\
+        german        & 20 (0/7/13)  & 1000      & 2  & segment   & 19 (19/0/0)  & 2310   & 7  \\
+        glass         & 9 (9/0/0)    & 214       & 7  & shuttle   & 9 (0/9/0)    & 2,189 & 7  \\
+        heart         & 13 (1/12/0)  & 270       & 2  & sonar     & 60 (60/0/0)  & 208    & 2  \\
+        ionosphere    & 33 (32/1/0)  & 351       & 2  & spambase  & 57 (57/0/0)  & 4597   & 2  \\
+        iris          & 4 (4/0/0)    & 150       & 3  & splice    & 60 (0/0/60)  & 3190   & 3  \\
+        lymphography  & 18 (0/3/15)  & 148       & 4  & thyroid   & 21 (6/15/0)  & 7200   & 3  \\
+        magic         & 10 (10/0/0)  & 19,020    & 2  & vehicle   & 18 (0/18/0)  & 846    & 4  \\
+        monk-2        & 6 (0/6/0)    & 432       & 2  & vowel     & 13 (10/3/0)  & 990    & 11 \\
+        newthyroid    & 5 (4/1/0)    & 215       & 3  & wine      & 13 (13/0/0)  & 178    & 3  \\
+        nursery       & 8 (0/0/8)    & 12,690    & 5  & yeast     & 8 (8/0/0)    & 1484   & 10 \\
+        page-blocks   & 10 (4/6/0)   & 5472      & 5  &           &              &        &    \\
+        \bottomrule
+        \end{tabular}
+    \end{table*}
+ \section{Evaluación de los filtros implementados en la biblioteca \texttt{nois-learn}}
+ Con el objetivo de evaluar el correcto diseño y funcionamiento de los métodos de filtrado implementados en la biblioteca aquí propuesta, replicaremos los experimentos relizados por J.Luengo et al en \cite{LUENGO201827}, donde se compara el desempeño del, propuesto en tal artículo, limpiador de ruido CNC-Nos, frente a  parte de los filtros implementados en \texttt{nois-learn}.
+ 
+ \subsection{Conjuntos de datos}
+ Se hará uso de los conjuntos de datos mostrados en la tabla \ref{tab:base-datasets}, en la que se reflejan, en 2 columnas, los identificadores de los conjuntos de  datos a emplear, junto con el número de instancias del que disponen (\#EX), el número de atributos numéricos y nominales (\#AT) y el número de clases (\#CL). Para cada dataset, luego de eliminar cualquier instancia con algún atributo perdido, se estudiará el desempeño de las técnicas de filtrado tras introducir ruido de clase completamente aleatorio (NCAR). Más específicamente, se estudiarán los casos con niveles de ruido en el rango 5\%(bajo), 25\%(medio) y 50\%(alto).\\
+
+ Partiendo de 31 datasets, se contará así con 93 conjuntos de datos ruidosos, sobre los que se ralizarán 5 validaciones cruzadas estratificadas por la clase objetivo. Adicionalmente, por cada conjunto de datos y nivel de ruido dados, se realizarán el estudio con 5 semillas (de aleatoriedad) diferentes, dando lugar a un total de 25 ciclos de entrenamiento y validación por cada dataset y nivel de ruido.
+
+ \subsection{Técnicas de filtrado a evaluar}
+    \begin{table*}[t!]
+        \centering
+        \footnotesize
+        \caption{Parameter setting for the noise filters.}
+        \label{tab:noise-filters}
+        \begin{tabularx}{\textwidth}{@{}p{0.40\textwidth}p{0.09\textwidth}p{0.06\textwidth}X@{}}
+        \toprule
+        Name & Acronym & Ref. & Parameters \\
+        \midrule
+        Edited nearest neighbor & ENN & [52] & $k$: 3, Distance function: Euclidean/HVDM \\
+        Edited nearest neighbor with thresholding & ENNTh & [52] & $k$: 3, Noise Threshold: 0.7, Distance function: Euclidean/HVDM \\
+        Nearest centroid neighbourhood edition & NCNEdit & [44] & $k$: 3 \\
+        Relative neighbourhood graphs & RNG & [43] & Distance function: Euclidean/HVDM \\
+        Classification filter & CF & [16] & $\Gamma$: 10, $k$: 1, classifier: 1-NN \\
+        Cross-validated committees filter & CVCF & [53] & Voting scheme: consensus, $\Gamma$: 4 \\
+        Ensemble filter & EF & [8] & Voting scheme: consensus, $\Gamma$: 4 \\
+        Iterative-partitioning filter & IPF & [27] & Voting scheme: majority, $\Gamma$: 5, $K_{IPF}$: 3, $D_{IPF}$: 1\% \\
+        Iterative class noise filter based on the fusion of classifiers & INFFC & [42] & Voting scheme: majority, $\Gamma$: 3, threshold: 0, $k$: 3 \\
+        Class Noise cleaning with noise scoring & CNC-NOS & -- & Base filters: \{IPF, NCNEdit, RNG, CVCF, EF\}, $k$: 5 \\
+        \bottomrule
+        \end{tabularx}
+    \end{table*}
+ Las técnicas de filtrado a evaluar son las mostradas en la tabla \ref{tab:noise-filters}, donde además se especifican los hiperparámetros con los que configurarlas.
+
+ \subsection{Metodología de evaluación}
+    \begin{wraptable}{r}{0.52\textwidth}
+        \centering
+        \small
+        \caption{Parameter setting for the classifiers.}
+        \label{tab:classifiers}
+        \begin{tabularx}{\linewidth}{@{}p{0.25\linewidth}X@{}}
+        \toprule
+        Classifier & Parameters \\
+        \midrule
+        C4.5 & Pruning: yes, Confidence: 0.25, Instances per leaf: 2 \\
+        $k$-NN & $k$: 1, Distance: Euclidean/HVDM \\
+        SVM & $C$: 100, Kernel: RBF, $\epsilon$: 1E-12, $\gamma$: 0.3 \\
+        \bottomrule
+        \end{tabularx}
+    \end{wraptable}
+
+ De modo que para cada uno de los 5 entrenamientos de las 5 validaciones cruzadas a realizar para cada dataset, nivel de ruido y semilla, se comenzará filtrando los datos mediante la técnica que corresponda de las mostradas en la Tabla \ref{tab:noise-filters} para posteriormente usar dichos datos para, por separado, entrenar los clasificadores de la Tabla \ref{tab:classifiers}, con la configuración dada por los hiperparámetros adjuntos en la misma.\\
+
+ Esperamos con ello obtener los mismos (si no muy similares) resultados mostrados en \cite{LUENGO201827}.
+
+\vspace{2.5cm}  
+ \section{Evaluación de la propuesta}
+    \begin{table*}[b!]
+        \centering
+        \footnotesize
+        \caption{Datasets a emplear para la evaluación de los filtros basados en TabPFN.}
+        \label{tab:datasets_ordenados}
+        \begin{tabular}{lccc|lccc}
+        \hline
+        \textbf{Dataset} & \textbf{\#EX} & \textbf{\#AT} & \textbf{\#CL} &
+        \textbf{Dataset} & \textbf{\#EX} & \textbf{\#AT} & \textbf{\#CL} \\
+        \hline
+        zoo           & 101 & 16(0/16)   & 7  & monk          & 432  & 6(6/0)     & 2  \\
+        lymphography  & 148 & 18(3/15)   & 4  & led7digit     & 500  & 7(0/7)     & 10 \\
+        iris          & 150 & 4(4/0)     & 3  & page-blocks   & 548  & 10(10/0)   & 5  \\
+        automobile    & 159 & 25(15/10)  & 6  & wdbc          & 569  & 30(30/0)   & 2  \\
+        hayes-roth    & 160 & 4(4/0)     & 3  & balance       & 625  & 4(4/0)     & 3  \\
+        wine          & 178 & 13(13/0)   & 3  & satimage      & 643  & 36(36/0)   & 7  \\
+        sonar         & 208 & 60(60/0)   & 2  & thyroid       & 720  & 21(6/15)   & 3  \\
+        glass         & 214 & 9(9/0)     & 7  & pima          & 768  & 8(8/0)     & 2  \\
+        new-thyroid   & 215 & 5(5/0)     & 3  & vehicle       & 846  & 18(18/0)   & 4  \\
+        heart         & 270 & 13(13/0)   & 2  & vowel         & 990  & 13(13/0)   & 11 \\
+        cleveland     & 297 & 13(13/0)   & 5  & german        & 1000 & 20(13/7)   & 2  \\
+        splice        & 319 & 60(0/60)   & 3  & flare         & 1066 & 11(0/11)   & 6  \\
+        ecoli         & 336 & 7(7/0)     & 8  & penbased      & 1099 & 16(16/0)   & 10 \\
+        ionosphere    & 351 & 33(33/0)   & 2  & nursery       & 1296 & 8(0/8)     & 5  \\
+        dermatology   & 358 & 33(1/32)   & 6  & contraceptive & 1473 & 9(9/0)     & 3  \\
+        \hline
+        \end{tabular}
+    \end{table*}
+ \subsection{Conjuntos de datos utilizados}
+  De cara a evaluar el desempeño de los filtros basados en el empleo de TabPFN como clasificador base se hará uso de los 30 conjuntos de datos mostrados en la tabla \ref{tab:datasets_ordenados}, disponibles en \href{https://sci2s.ugr.es/mcs_noise#Results%20of%20MCSs%20with%20Noisy%20Data}{este enlace}.\\
+  
+  Siguiendo la tabla \ref{tab:datasets_ordenados} (con la misma estructura que la tabla \ref{tab:base-datasets}), haremos uso de 30 conjuntos de datos, empleando 3 niveles de ruido: 5\% (bajo), 25\% (medio) y 50\%(alto), ejecutando 5 validaciones cruzadas estratificadas con solo la primera de las semillas disponibles en el enlace anterior (es decir \texttt{seed=1}).\\
+
+ \subsection{Metodología de simulación}
+ Dado un dataset y un nivel de ruido, la metodología a seguir en cada uno de los 5 entrenamientos a realizar en cada 5 validación cruzada constará de los siguientes pasos:
+ \begin{enumerate}
+    \item Preprocesar los datos mediante una imputación simple de valores perdidos (es decir, eliminando las instancias con algún valor faltante), seguida de una codificación tipo one-hot-encoding de los atributos nominales y una estandarización de los datos.
+    
+    \item Aplicación de la técnica de filtrado que corresponda, con la que obtener un conjunto filtrado de instancias potencialmente ruidosas.
+
+    \item Uso del conjunto anteriormente filtrado para entrenar una regresión logística (por ser computacionalmente menos costoso que alternativas como RandomForest).
+
+    \item Validación del modelo anteriormente obtenido sobre el fold de testeo restante, de donde extraer las métricas de clasificación y limpieza a analizar. 
+ \end{enumerate}
+
+ Para finalmente promediar los resultados obtenidos en el paso 4 sobre cada 5 validación cruzada.\\
+ 
+ Esto se hará para todos y cada uno de los conjuntos de datos disponibles, con los niveles y tipos de ruido antes propuestos. \\
+
+
+ \subsection{Métricas de evaluación}
+ Para comparar el desempeño de todos y cada uno de los filtros pondremos nuestra atención en:
+\begin{itemize}
+    \item La diferencia absoluta entre el accuracy balanceado tras filtrar y sin filtrar los datos de entrada ($\xi_{BalAcc}=BalAcc_{filtrado}-BalAcc_{base}$). Al considerar el accuracy balanceado, en lugar del básico, evitaremos encubrir cualquier sesgo de las técnicas a aplicar hacia las clases mayoritarias, si las hubiera, algo a tener en cuenta siempre que se apliquen técnicas que añadan y eliminen instancias. Optamos por tomar la diferencia (en lugar del accuracy balanceado original) porque la creemos más representativa del nivel de mejora que podemos esperar al aplicar cada filtro, independientemente de si el accuracy del que se parte antes de filtrar es mayor o menor. \\
+    Adicionalmente se consideró analizar también métricas de clasificación como la precisión y la puntuación f1, pero tras hacerlo se observo siempre una correlación casi perfecta entre tales métricas, deciciendo con ello excluirlas del análisis con el objetivo de hacer más sencilla y limpia la compresión de los resultados.
+
+
+    \item Porcentaje de instancias etiquetadas como ruidosas, junto con \textit{accuracy}, \textit{precision}, \textit{recall}, \textit{f1}, \textit{specificity} y \textit{MCC} para evaluar la capacidad del filtro de identificar correctamente las instancias a las que se les ha añadido ruido.
+
+    \item Tiempo de filtrado, para valorar la eficiencia computacional de las técnicas empleadas.
+    
+\end{itemize}
+ Con ello trataremos de medir no solo las mejoras en el poder de clasificación de los modelos a emplear tras el filtrado, sino también el poder de detección de ruido de los filtros previamente empleados.\\
+
+ 
+    \subsection{Configuración de los filtros basados en distancias}
+    Por un lado compararemos el desempeño de la propuesta con los filtros basados en distancias de la tabla \ref{tab:distance_filters}. Al contrario de como se realiza en la sección anterior, en esta, con el objetivo de obtener resultados lo más fieles a la realidad posibles, para cada par (dataset, nivel de ruido) se lanzará cada filtro con diferentes configuraciones de hiperparámetros, procurando así considerar solo aquella que mejores resultados reporte para cada uno de los pares anteriores.\\
+    
+    De tal modo se ejecutará cada técnica de filtrado con, donde corresponda, todos y cada uno de los hiperparámetros adjuntos en la tabla \ref{tab:hiperparametros_distancia}.\\
+    
+        
+        \begin{table}[t]
+            \centering
+            \begin{tabular}{ll}
+            \hline
+            \textbf{Abreviatura} & \textbf{Filtro}                                           \\ \hline
+            ENN                  & Edited Nearest Neighbors                                  \\
+            ENNProb              & Edited Nearest Neighbors with Probabilities               \\
+            ENNProbTh            & Edited Nearest Neighbors with Probabilities and Threshold \\
+            NCNE                 & Nearest Centroid Neighbor Edition                         \\
+            Multiedit            & Multiedit                                                 \\ \hline
+            \end{tabular}
+            \caption{}
+            \label{tab:distance_filters}
+        \end{table}
+        
+        \begin{table}[t]
+            \centering
+            \begin{tabular}{lll}
+            \hline
+            Hiperparámetro & Símbolo & Valores considerados \\
+            \hline
+            Tipo de voto & $k$ & $\{3,5,9\}$ \\
+            Umbral de decisión & $\tau$ & $\{0.5,0.7\}$ \\
+            Número de bloques / particiones & $b$ & $\{3,5\}$ \\
+            Máximo número de iteraciones / repeticiones & $it$ & $\{3\}$ \\
+            \hline
+            \end{tabular}
+            \caption{Hiperparámetros considerados en los filtros basados en distancia.}
+            \label{tab:hiperparametros_distancia}
+        \end{table}
+    
+    Así se probará, por ejemplo, \textit{ENN} con 3,5 y 9 vecinos; o \textit{Multiedit} con 3, 5 o 9 vecinos, así como 3 o 5 particiones y un máximo de 3 iteraciones del algoritmo.
+
+    \subsection{Configuración de los filtros basados en clasificadores}
+    Por otro lado se compará el desempeño de la propuesta frente a los filtros basados en clasificadores de la tabla \ref{tab:classifier_filters} haciendo uso, de manera análoga al apartado anterior, de los hiperparámetros de la tabla \ref{tab:hiperparametros_clasificadores}.
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{ll}
+        \hline
+        \textbf{Abreviatura} & \textbf{Filtro} \\ \hline
+        CF       & Classification Filter \\
+        CVCF     & Cross-Validated Committees Filter \\
+        CVCFTh   & Cross-Validated Committees Filter with Threshold \\
+        EF       & Ensemble Filtering \\
+        EFTh     & Ensemble Filtering with Threshold \\
+        IPF      & Iterative Partitioning Filter \\
+        INFFC    & Iterative Noise Filter based on the Fusion of Classifiers \\
+        INFFCTh  & Iterative Noise Filter based on the Fusion of Classifiers with Threshold \\ \hline
+        \end{tabular}
+        \caption{Filtros basados en clasificadores considerados.}
+        \label{tab:classifier_filters}
+    \end{table}
+    
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Hiperparámetro} & \textbf{Símbolo} & \textbf{Valores considerados} \\
+        \hline
+        Número de folds de validación cruzada & $cv$ & $\{5,7,10\}$ \\
+        Umbral de decisión & $\tau$ & $\{0.5,0.7\}$ \\
+        Número de particiones & $p$ & $\{5,7,10\}$ \\
+        Regla de decisión / votación & $r$ & \{consensus, majority, threshold\} \\
+        Máximo número de iteraciones & $it$ & $\{3\}$ \\
+        Umbral de parada & $p_{stop}$ & $\{0.03\}$ \\
+        Paciencia de parada & $k$ & $\{3\}$ \\
+        Fracción máxima de instancias eliminadas & $f_{max}$ & $\{0.5\}$ \\
+        \hline
+        \end{tabular}
+        \caption{Hiperparámetros considerados en los filtros basados en clasificadores.}
+        \label{tab:hiperparametros_clasificadores}
+    \end{table}
+
+    Donde, por ejemplo, ejecutaremos CF, EF/EFTh e INFFC/INFFCTh haciendo uso de los clasificadores base de la tabla \ref{tab:clasificadores_base} (empleándolos individualmente en el CF y en el voto mediante ensemble en los demás). Para el resto de filtros (CVCF/CVCFTh e IPF/IPFTh) se ha empleado solo el clasificador tipo C4.5.\\
+
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{ll}
+        \hline
+        \textbf{Abreviatura} & \textbf{Clasificador base} \\ \hline
+        DT    & Decision Tree con criterio de entropía \\
+        C45   & Árbol de decisión tipo C4.5 \\
+        KNN1  & $k$-Nearest Neighbors con $k=3$ \\
+        LR    & Logistic Regression \\
+        \hline
+        \end{tabular}
+        \caption{Clasificadores base utilizados en los filtros basados en clasificadores.}
+        \label{tab:clasificadores_base}
+    \end{table}
+
+
+    \subsection{Configuración de las técnicas de limpiza de clase}
+    Para el filtro CNCNOS se consideró una rejilla específica de hiperparámetros siguiendo la tabla \ref{tab:hiperparametros_cncnos}.
+
+    
+    \begin{table}[htbp]
+        \centering
+        \begin{tabular}{lll}
+        \hline
+        \textbf{Hiperparámetro} & \textbf{Símbolo} & \textbf{Valores considerados} \\
+        \hline
+        Número de vecinos (base y para puntuación) & $k_b$ & $\{3,5,9\}$ \\
+        Número de folds internos & $cv$ & $\{5,7,9\}$ \\
+        Máximo número de iteraciones & $it$ & $\{3\}$ \\
+        \hline
+        \end{tabular}
+        \caption{Hiperparámetros considerados para el filtro CNCNOS.}
+        \label{tab:hiperparametros_cncnos}
+    \end{table}
+
+    \subsection{Metodología de evaluación de los resultados}
+    Comenzaremos evaluando la propuesta atendiendo al porcentaje de mejora promedio (sobre todos los conjuntos de datos) en el accuracy balanceado obtenido con cada técnica de filtrado, según el nivel de ruido introducido. Para reforzar los resultados, dicha estimación irá acompañada del p-valor asociado al test de wilcoxon de doble sentido ejecutado para cada filtro sobre las diferencias obtenidas con todos los conjuntos de datos usados.\\
+    Adicionalmente acompañaremos este punto con un estudio de la variabilidad de los filtros empleados haciendo uso de diagramas de cajas sobre las diferencias obtenidas con cada filtro para cada nivel de ruido.\\
+    Así mismo visualizaremos el porcentaje de conjuntos de datos en los que cada filtro a reportado una mejora (es decir, en los que la diferencia promedio por dataset era positiva).\\
+    Este análisis será realizado a dos niveles:
+        \begin{itemize}
+            \item \textbf{A nivel de familia}, donde cada técnica de filtrado será considerada como una familia de métodos parametrizada. En este caso, para cada conjunto de datos y partición de la validación cruzada (\textit{5CV}), se empleará la configuración que reporte la mayor mejora en el \textit{accuracy} balanceado entre todas las hiperconfiguraciones evaluadas para dicha familia. Es decir, se compararán, por ejemplo, el desempeño de ENN frente a CF, ello a partir de los mejores resultados obtenidos con cada uno de los anteriores filtros para cada dataset, independientemente de que la hiperparametrización sea diferente entre estos. De este modo, el objetivo es estimar el rendimiento potencial máximo alcanzable por cada propuesta, independientemente de la combinación concreta de hiperparámetros utilizada.
+            
+            \item \textbf{A nivel de hiperparametrización}, donde cada combinación específica de hiperparámetros será analizada de forma independiente. Este estudio permitirá evaluar la robustez y estabilidad de las distintas configuraciones, así como determinar si las mejoras observadas a nivel de familia se mantienen de manera consistente o dependen de una selección concreta de hiperparámetros.
+        \end{itemize}
+
+    En tales líneas planteamos estudiar las siguientes hipótesis
+1
+    \begin{itemize}
+    
+        \item \textbf{H$_1$:} La propuesta basada en \textit{TabPFN} constituye, a nivel de familia de técnicas, el método de filtrado que produce una mayor mejora en el \textit{accuracy} balanceado respecto al resto de alternativas consideradas.
+    
+        \item \textbf{H$_2$:} Existe al menos una hiperconfiguración de la propuesta basada en \textit{TabPFN} cuyo desempeño es estadísticamente superior al de las mejores hiperconfiguraciones de los restantes filtros evaluados.
+    
+        \item \textbf{H$_3$:} Las mejoras obtenidas por la propuesta son estadísticamente significativas respecto a la ausencia de filtrado, según el contraste de Wilcoxon sobre las diferencias obtenidas en los distintos conjuntos de datos.
+    
+        \item \textbf{H$_4$:} La propuesta presenta una mayor robustez que los métodos comparados, entendiendo como tal una menor variabilidad en las mejoras obtenidas entre diferentes conjuntos de datos y escenarios de ruido.
+    
+        \item \textbf{H$_5$:} La superioridad de la propuesta se mantiene para distintos niveles de ruido, no limitándose únicamente a escenarios con porcentajes elevados de instancias ruidosas.
+    
+        \item \textbf{H$_6$:} La propuesta consigue mejorar el rendimiento predictivo en un mayor porcentaje de conjuntos de datos que el resto de técnicas de filtrado consideradas.
+    
+        \item \textbf{H$_7$:} La influencia de la hiperparametrización sobre el rendimiento de la propuesta es menor que la observada en las técnicas competidoras, indicando una mayor estabilidad frente a la elección de parámetros.
+    
+    \end{itemize}
+    
+
+
+    Posteriormente compararemos cara a cara la técnica aquí propuesta frente todos y cada uno de los filtros empleados. Primero realizaremos una comparación por pares en la que estudiar las diferencias entre las mejoras obtenidas con el par correspondiente a la propuesta junto con cada uno de los demás filtros; y segundo, como medida global computaremos el ranking promedio de cada filtro (sobre los conjuntos de datos empleados).\\
+
+    Tras analizar el desempeño en clasificación de la propuesta, realizaremos un análisis muy similar, atendiendo sin embargo esta vez a la capacidad para detectar instancias potencialmente ruidosas.\\
+
+    A continuación nos centraremos en el costo computacional de la misma frente a las demás, ello representando el tiempo promedio empleado en el ciclo entrenamiento-validación en cada conjuntod de datos, en función del nivel de ruido añadido. Comprobaremos así si se observa alguna relación entre dicho nivel de ruido y el tiempo de filtrado de los datos.
+    
+    \subsection{Especificaciones del ordenador utilizado para realizar las simulaciones}
+    
+    Todos los cálculos y simulaciones presentados en este trabajo se realizaron en un ordenador portátil \textit{ASUS ROG Zephyrus G14 GA401QC}. El equipo cuenta con un procesador AMD Ryzen 7 5800HS, formado por 8 núcleos y 16 hilos de ejecución, con una frecuencia máxima de hasta 4.4 GHz. Además, dispone de una tarjeta gráfica NVIDIA GeForce RTX 3050 Laptop GPU con 4 GB de memoria GDDR6, aunque las simulaciones se ejecutaron principalmente sobre CPU. La memoria principal del sistema es de 24 GB de RAM DDR4. Todo se realizó sobre el kernel de Linux en la distribución de Arch+Hyprland. 
+    
+
+\chapter{Análisis de los resultados}\label{sect:analisisResultados}
+ \section{Evaluación de la biblioteca}
+
+\newpage
+\section{Evaluación de la propuesta}
+ \subsection{Desempeño global promedio}
+ \subsubsection{A nivel de familia}
+ Comenzamos mostrando en el margen izquierdo de la tabla \ref{tab:resultadosPromedioPropuesta} la mejora promedio en el accuracy balanceado ($\xi_{BalAcc}$) obtenida con cada técnica de filtrado sobre los conjuntos de datos de la tabla \ref{tab:datasets_ordenados}, para cada nivel de ruido de los 3 propuestos. En el margen derecho de la misma tabla se adjunta el p-valor asociado a dicha media. En negrita quedan resaltadas las más altas mejoras obtenidas para cada nivel de ruido, siempre que el p-valor asociado sea estadísticamente significativo (inferior a 0.05), lo que también se resalta en negrita en la correspondiente región.\\
+
+\begin{table}[h]
+        \centering
+        \caption{Mejoras promedio obtenidas al aplicar cada filtro para cada nivel de ruido, junto con el p-valor asociado a dichos promedios.}
+        \label{tab:resultadosPromedioPropuesta}
+   \begin{tblr}{
+      colspec = {lccccccc},
+      row{1,2} = {font=\bfseries},
+      hline{1,3} = {-}{},
+      hline{2} = {2-4}{1pt},
+      hline{2} = {6-8}{1pt},
+    }
+    Method & \SetCell[c=3]{c}$\xi_{BalAcc}$ &  &  &  & \SetCell[c=3]{c}p-value &  &  \\
+    \textit{LogReg} & 5\% & 25\% & 50\% &  & 5\% & 25\% & 50\% \\
+    ENN & -1.16 & 1.65 & 3.27 &  & 6.26E-1 & 1.12E-1 & 3.28E-1 \\
+    ENNProb & -0.38 & 2.59 & 4.03 &  & 5.98E-1 & \textbf{1.45E-2} & 9.61E-2 \\
+    ENNTh & -1.57 & 0.86 & 2.78 &  & 9.35E-1 & 1.98E-1 & 3.39E-1 \\
+    MultiEdit & -14.11 & -11.04 & -10.11 &  & \textbf{3.79E-6} & \textbf{1.10E-4} & \textbf{5.51E-4} \\
+    NCNEdit & -0.72 & 1.64 & 4.41 &  & 9.35E-1 & 1.77E-1 & \textbf{1.13E-2} \\
+    \hline
+    CF & \textbf{2.51} & 4.54 & 5.20 &  & \textbf{3.45E-5} & \textbf{1.82E-5} & \textbf{1.53E-4} \\
+    CVCF & 0.08 & 0.22 & 0.27 &  & 8.10E-1 & 7.21E-1 & \textbf{3.99E-2} \\
+    CVCFTh & -0.08 & 0.03 & -0.12 &  & 7.49E-1 & 7.89E-1 & 3.26E-1 \\
+    Ensemble & 1.54 & 3.87 & 4.10 &  & \textbf{8.14E-3} & \textbf{1.05E-3} & \textbf{1.70E-4} \\
+    EnsembleTh & 1.84 & 3.97 & 4.73 &  & \textbf{2.77E-3} & \textbf{9.52E-4} & \textbf{1.86E-3} \\
+    INFFC & 0.46 & 3.14 & 5.22 &  & 1.95E-1 & \textbf{5.38E-3} & \textbf{2.56E-3} \\
+    INFFCTh & 0.82 & 2.74 & \textbf{5.38} &  & 6.99E-2 & \textbf{1.28E-2} & \textbf{4.60E-4} \\
+    IPF & 1.21 & 2.49 & 3.71 &  & \textbf{3.15E-4} & \textbf{8.86E-5} & \textbf{2.60E-4} \\
+    \hline
+    CNCNOS & -2.12 & 0.17 & 2.77 &  & 4.79E-1 & 7.62E-1 & 3.05E-1 \\
+    \hline
+    TABPFN-CF & 1.87 & 4.39 & 4.29 &  & \textbf{8.71E-3} & \textbf{4.03E-3} & 7.32E-2 \\
+    TABPFN-CVCF & 1.56 & 4.11 & 3.82 &  & \textbf{2.03E-3} & \textbf{2.62E-3} & 5.78E-2 \\
+    TABPFN-CVCFTh & 2.02 & \textbf{4.76} & 4.66 &  & \textbf{2.03E-3} & \textbf{2.86E-4} & \textbf{1.74E-2} \\
+    TABPFN-IPF & 1.81 & 2.79 & 3.50 &  & \textbf{4.78E-5} & \textbf{4.93E-4} & \textbf{2.96E-3} \\
+    \end{tblr}
+    \end{table}
+
+    
+ Encontramos así que...\\
+
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+ 
+ A continuación ponemos nuestra atención en la figura \ref{fig:boxplot_resultadosPromedioPropuesta} donde mostramos los boxplots asociados a las diferencias en el accuracy balanceado obtenidas tras aplicar cada uno de los filtros antes mostrados. 
+ \begin{figure}
+     \centering
+     \includegraphics[width=\linewidth]{img/promedioGlobal/porFamilia/boxPlots_promedio_global_por_familia.png}
+     \caption{Diagramas de cajas correspondientes a las diferencias entre el accuracy balanceado tras y sin filtrar, según el nivel de ruido y el filtro aplicado.}
+     \label{fig:boxplot_resultadosPromedioPropuesta}
+ \end{figure}
+
+ Se aprecia con ello que...\\
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+\newpage
+ Si antedemos a las medianas de las figuras anteriores descubriremos que en realidad la mejora promedio puede en algunos casos no ser suficientemente representativa del poder de cada filtro (dada la variabilidad de las diferencias promediadas sobre todos y cada uno de los datasets empleados). Por ello podemos fijar nuestra atención también en la figura \ref{fig:pct_mejora_filtro}, en la que se muestra el porcentaje de conjuntos de datos en los que cada filtro a logrado una mejora, junto con los p-valores asociados a que dicho porcentaje es mayor al 50\%.
+
+
+ 
+ \begin{wrapfigure}{l}{0.5\textwidth}
+    \hspace{-1cm}
+    \includegraphics[width=0.55\textwidth]{img/promedioGlobal/porFamilia/pct_mejoras_por_fold.png}
+    \caption{Porcentaje de folds en los que se ha obtenido una mejora en el accuracy balanceado según filtro y nivel de ruido.}
+    \label{fig:pct_mejora_filtro}
+ \end{wrapfigure}
+
+ De lo anterior extraemos que...\\
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+\begin{table*}[h!]
+\centering
+\caption{Top 20 filtros por nivel de ruido}
+\label{tab:top10_wilcox}
+
+\hspace{-1.5cm}
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{Ruido 5\%}
+\begin{tabular}{lcc}
+\toprule
+Filtro & $\xi_{BalAcc}$ & p\_value \\
+\midrule
+TABPFN-CVCFTh\_cv5\_tau0.5 & 1.71 & \textbf{1.68E-02} \\
+TABPFN-CVCFTh\_cv10\_tau0.5 & 1.68 & \textbf{1.25E-02} \\
+TABPFN-CVCFTh\_cv7\_tau0.5 & 1.66 & \textbf{1.16E-02} \\
+TABPFN-CVCFTh\_cv10\_tau0.7 & 1.60 & \textbf{6.62E-03} \\
+TABPFN-CVCFTh\_cv7\_tau0.7 & 1.60 & \textbf{5.85E-03} \\
+TABPFN-CVCF\_cv7 & 1.41 & \textbf{5.57E-03} \\
+TABPFN-CVCFTh\_cv5\_tau0.7 & 1.39 & \textbf{7.36E-03} \\
+TABPFN-CVCF\_cv10 & 1.37 & \textbf{4.67E-03} \\
+TABPFN-CF\_cv5 & 1.32 & 6.36E-02 \\
+TABPFN-CF\_cv7 & 1.21 & \textbf{4.73E-02} \\
+TABPFN-CF\_cv10 & 1.12 & \textbf{4.73E-02} \\
+TABPFN-CVCF\_cv5 & 1.10 & \textbf{4.25E-02} \\
+Ensemble\_cv10 & 1.08 & \textbf{4.49E-02} \\
+Ensemble\_cv5 & 0.95 & 7.32E-02 \\
+CF\_DT\_cv5 & 0.85 & 3.28E-01 \\
+CF\_c45\_cv5 & 0.85 & 3.28E-01 \\
+EnsembleTh\_cv10\_tau0.7 & 0.80 & 9.38E-02 \\
+TABPFN-IPF\_cv5\_consensus & 0.78 & 7.30E-02 \\
+EnsembleTh\_cv5\_tau0.7 & 0.72 & 1.40E-01 \\
+Ensemble\_cv7 & 0.70 & 1.46E-01 \\
+\bottomrule
+\end{tabular}
+
+\end{subtable}
+\hfill
+\begin{subtable}{0.48\textwidth}
+\centering
+\caption{Ruido 25\%}
+\begin{tabular}{lcc}
+\toprule
+Filtro & $\xi_{BalAcc}$ & p\_value \\
+\midrule
+TABPFN-CVCFTh\_cv10\_tau0.7 & 4.42 & \textbf{7.51E-04} \\
+TABPFN-CF\_cv10 & 3.92 & \textbf{7.61E-03} \\
+TABPFN-CVCF\_cv7 & 3.91 & \textbf{1.24E-02} \\
+TABPFN-CVCFTh\_cv7\_tau0.5 & 3.90 & \textbf{1.08E-02} \\
+TABPFN-CVCFTh\_cv5\_tau0.7 & 3.88 & \textbf{2.25E-02} \\
+TABPFN-CVCF\_cv10 & 3.84 & \textbf{1.88E-02} \\
+TABPFN-CVCFTh\_cv10\_tau0.5 & 3.83 & \textbf{2.01E-02} \\
+TABPFN-CVCFTh\_cv5\_tau0.5 & 3.73 & \textbf{1.79E-02} \\
+TABPFN-CVCFTh\_cv7\_tau0.7 & 3.70 & \textbf{6.17E-03} \\
+TABPFN-CF\_cv7 & 3.54 & \textbf{2.21E-02} \\
+TABPFN-CVCF\_cv5 & 3.49 & \textbf{1.24E-02} \\
+TABPFN-CF\_cv5 & 3.29 & 6.99E-02 \\
+Ensemble\_cv7 & 3.24 & \textbf{8.71E-03} \\
+Ensemble\_cv5 & 2.90 & \textbf{2.38E-02} \\
+Ensemble\_cv10 & 2.79 & \textbf{2.52E-02} \\
+EnsembleTh\_cv7\_tau0.7 & 2.60 & 8.41E-02 \\
+EnsembleTh\_cv10\_tau0.7 & 2.49 & \textbf{2.70E-02} \\
+INFFC\_cv10 & 2.41 & 5.77E-02 \\
+EnsembleTh\_cv5\_tau0.7 & 2.32 & 5.23E-02 \\
+CF\_c45\_cv7 & 2.29 & 2.45E-01 \\
+\bottomrule
+\end{tabular}
+
+\end{subtable}
+
+\vspace{0.8cm}
+
+\begin{subtable}{0.6\textwidth}
+\centering
+\caption{Ruido 50\%}
+\begin{tabular}{lcc}
+\toprule
+Filtro & $\xi_{BalAcc}$ & p\_value \\
+\midrule
+INFFC\_cv10 & 4.28 & \textbf{1.45E-02} \\
+INFFC\_cv7 & 3.97 & 1.29E-01 \\
+TABPFN-CVCFTh\_cv10\_tau0.7 & 3.79 & 3.27E-01 \\
+TABPFN-CF\_cv5 & 3.76 & 1.35E-01 \\
+INFFC\_cv5 & 3.67 & 1.05E-01 \\
+TABPFN-CF\_cv7 & 3.63 & 1.46E-01 \\
+INFFCTh\_cv10\_tau0.7 & 3.49 & \textbf{4.49E-02} \\
+TABPFN-CVCFTh\_cv7\_tau0.5 & 3.48 & 4.12E-01 \\
+TABPFN-CVCFTh\_cv7\_tau0.7 & 3.43 & 2.55E-01 \\
+TABPFN-CVCFTh\_cv10\_tau0.5 & 3.43 & 4.28E-01 \\
+TABPFN-CF\_cv10 & 3.42 & 1.98E-01 \\
+TABPFN-CVCF\_cv7 & 3.40 & 1.28E-01 \\
+TABPFN-CVCF\_cv10 & 3.40 & 1.92E-01 \\
+NCNEdit\_k9 & 3.39 & 1.14E-01 \\
+TABPFN-CVCFTh\_cv5\_tau0.5 & 3.39 & 1.51E-01 \\
+TABPFN-CVCFTh\_cv5\_tau0.7 & 3.36 & 1.51E-01 \\
+ENNProb\_k9 & 3.17 & 4.17E-01 \\
+INFFCTh\_cv7\_tau0.7 & 3.12 & 2.29E-01 \\
+Ensemble\_cv10 & 2.95 & \textbf{3.45E-02} \\
+EnsembleTh\_cv10\_tau0.7 & 2.91 & \textbf{4.05E-02} \\
+\bottomrule
+\end{tabular}
+
+\end{subtable}
+
+\end{table*}
+
+
+ \subsubsection{A nivel de hiperparametrización}\label{sect:resultadosPromedio_porFamilia}
+ En este caso, al contar con 85 filtros diferentes (considerando las diferencias existente entre una misma familia según la hiperparametrización realizada), en las tablas \ref{tab:top10_wilcox} mostramos el top 20 de modelos, indicada su hiperparametrización en la primera columna, ordenados por la mejora promedio obtenida (en la segunda columna, $\xi_{BalAcc}$), junto al p-valor asociado al test de Wilcoxon hecho sobre las diferencias obtenidas en cada dataset, ello para los 3 niveles de ruido simulados. 
+    
+
+
+
+
+ De lo anterior extraemos que...\\
+
+
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+    
+ \subsection{Desempeño frente a las demás técnicas}
+ \subsubsection{A nivel de familia}
+ En la tabla \ref{tab:proposed_vs_others} se muestran la media, mediana y el p-valor sobre las diferencias entre la mejora obtenida con el filtro propuesto y todos los demás del conjunto.
+
+\begin{table}[h]
+        \centering
+        \caption{Comparación TabPFN-CVCF frente a todos los demás modelos de modo individual.}
+        \label{tab:proposed_vs_others}
+   \begin{tblr}{
+      colspec = {lccccccc},
+      row{1,2} = {font=\bfseries},
+      hline{1,3} = {-}{},
+      hline{2} = {2-4}{1pt},
+      hline{2} = {7-9}{1pt},
+    }
+    Method & \SetCell[c=3]{c}Mean &  &  &  & \SetCell[c=3]{c}p-value &  &  \\
+    \textit{LogReg} & 5\% & 25\% & 50\% &  & 5\% & 25\% & 50\% \\
+    CF & -0.49 & 0.22 & -0.55 &  & 2.99E-1 & 6.89E-1 & 4.65E-1 \\
+    \hline
+    CNCNOS & \textcolor{green!60!black}{4.39} & \textcolor{green!60!black}{4.93} & 2.29 &  & \textbf{1.27E-2} & \textbf{2.47E-2} & 2.10E-1 \\
+    \hline
+    CVCF & \textcolor{green!60!black}{1.94} & \textcolor{green!60!black}{4.54} & 4.39 &  & \textbf{4.68E-3} & \textbf{3.59E-4} & 5.77E-2 \\
+    CVCFTh & \textcolor{green!60!black}{2.10} & \textcolor{green!60!black}{4.73} & \textcolor{green!60!black}{4.78} &  & \textbf{1.73E-3} & \textbf{3.59E-4} & \textbf{7.66E-3} \\
+    \hline
+    ENN & \textcolor{green!60!black}{3.18} & \textcolor{green!60!black}{3.11} & 1.39 &  & \textbf{2.34E-2} & \textbf{3.45E-2} & 3.58E-1 \\
+    ENNProb & 2.40 & \textcolor{green!60!black}{2.17} & 0.63 &  & 1.58E-1 & \textbf{3.84E-2} & 6.42E-1 \\
+    ENNTh & 3.59 & 3.89 & 1.88 &  & 3.09E-1 & 7.32E-2 & 1.84E-1 \\
+    \hline
+    Ensemble & 0.48 & 0.89 & 0.56 &  & 3.71E-1 & 3.49E-1 & 9.68E-1 \\
+    EnsembleTh & 0.18 & 0.79 & -0.07 &  & 8.08E-1 & 3.76E-1 & 9.35E-1 \\
+    INFFC & 1.56 & 1.62 & -0.57 &  & 1.91E-1 & 6.77E-2 & 7.46E-1 \\
+    INFFCTh & 1.21 & 2.02 & -0.72 &  & 2.71E-1 & 1.39E-1 & 7.15E-1 \\
+    IPF & 0.81 & 2.27 & 0.94 &  & 2.31E-1 & 8.35E-2 & 7.92E-1 \\
+    \hline
+    MultiEdit & \textcolor{green!60!black}{16.13} & \textcolor{green!60!black}{15.91} & \textcolor{green!60!black}{15.03} &  & \textbf{8.33E-7} & \textbf{5.22E-8} & \textbf{3.37E-6} \\
+    NCNEdit & \textcolor{green!60!black}{2.74} & \textcolor{green!60!black}{3.12} & 0.25 &  & \textbf{4.05E-2} & \textbf{3.50E-2} & 5.56E-1 \\
+    \hline
+    TABPFN-CF & 0.15 & 0.37 & 0.37 &  & 4.66E-1 & 8.73E-1 & 4.69E-1 \\
+    TABPFN-CVCF & 0.47 & \textcolor{green!60!black}{0.65} & 0.84 &  & 2.32E-1 & \textbf{2.40E-2} & 5.77E-2 \\
+    TABPFN-IPF & 0.21 & 1.97 & 1.16 &  & 7.32E-1 & 3.02E-1 & 5.69E-1 \\
+    \end{tblr}
+    \end{table}
+
+ De ello deducimos que...\\ \newline
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+ Por otro lado, en la figura \ref{fig:rank_mean_grouped_bars} mostramos el ranking promedio de cada filtro en la evaluación de estos sobre cada uno de los datasets, junto con el p-valor asociado a cada uno de los mismos.
+
+ \begin{wrapfigure}{r}{0.5\textwidth}
+    \centering
+    \includegraphics[width=1.1\linewidth]{img/compFiltros/rank_mean_grouped_bars.png}
+    \caption{Ranking promedio de cada filtro}
+    \label{fig:rank_mean_grouped_bars}
+ \end{wrapfigure}
+
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+ \subsubsection{A nivel de hiperparametrización}
+ Siguiendo los resultados obtenidos en la sección \ref{sect:proposed_vs_others_byHyperparam}, si seleccionáramos ¿? 
+
+\begin{table}[h]
+        \centering
+        \caption{Comparación del TabPFN-CVCF_cv1'_tau0.7 frente al resto de filtros.}
+        \label{tab:proposed_vs_others_byHyperparam}
+   \begin{tblr}{
+      colspec = {lccccccc},
+      row{1,2} = {font=\bfseries},
+      hline{1,3} = {-}{},
+      hline{2} = {2-4}{1pt},
+      hline{2} = {7-9}{1pt},
+    }
+    Method & \SetCell[c=3]{c}Mean &  &  &  & \SetCell[c=3]{c}p-value &  &  \\
+    \textit{LogReg} & 5\% & 25\% & 50\% &  & 5\% & 25\% & 50\% \\
+    CF_DT_cv10 & 0.95 & \textcolor{green!60!black}{2.21} & 2.25 &  & 2.53E-1 & \textbf{2.56E-3} & 2.71E-1 \\
+    CF_DT_cv5 & 0.75 & \textcolor{green!60!black}{2.51} & 2.48 &  & 2.29E-1 & \textbf{1.46E-3} & 1.40E-1 \\
+    CF_DT_cv7 & 1.44 & \textcolor{green!60!black}{2.14} & 2.15 &  & 1.40E-1 & \textbf{5.78E-3} & 1.09E-1 \\
+    CF_KNN1_cv10 & \textcolor{green!60!black}{3.57} & \textcolor{green!60!black}{4.57} & 2.49 &  & \textbf{1.04E-2} & \textbf{8.71E-3} & 6.99E-2 \\
+    CF_KNN1_cv5 & \textcolor{green!60!black}{3.88} & \textcolor{green!60!black}{4.65} & \textcolor{green!60!black}{3.18} &  & \textbf{5.78E-3} & \textbf{3.74E-3} & \textbf{2.93E-2} \\
+    CF_KNN1_cv7 & \textcolor{green!60!black}{3.38} & \textcolor{green!60!black}{4.94} & \textcolor{green!60!black}{2.84} &  & \textbf{7.61E-3} & \textbf{4.03E-3} & \textbf{3.64E-2} \\
+    CF_LR_cv10 & \textcolor{green!60!black}{2.67} & \textcolor{green!60!black}{3.49} & 0.92 &  & \textbf{5.11E-3} & \textbf{2.48E-2} & 7.92E-1 \\
+    CF_LR_cv5 & \textcolor{green!60!black}{3.04} & \textcolor{green!60!black}{3.79} & 1.02 &  & \textbf{7.10E-3} & \textbf{3.84E-2} & 6.66E-1 \\
+    CF_LR_cv7 & \textcolor{green!60!black}{2.68} & \textcolor{green!60!black}{3.60} & 0.90 &  & \textbf{1.85E-2} & \textbf{4.27E-2} & 7.77E-1 \\
+    CF_c45_cv10 & 0.95 & \textcolor{green!60!black}{2.21} & 2.25 &  & 2.53E-1 & \textbf{2.56E-3} & 2.71E-1 \\
+    CF_c45_cv5 & 0.75 & \textcolor{green!60!black}{2.51} & 2.48 &  & 2.29E-1 & \textbf{1.46E-3} & 1.40E-1 \\
+    CF_c45_cv7 & 1.44 & \textcolor{green!60!black}{2.14} & 2.15 &  & 1.40E-1 & \textbf{5.78E-3} & 1.09E-1 \\
+    CNCNOS_default & \textcolor{green!60!black}{3.94} & \textcolor{green!60!black}{4.60} & 1.38 &  & \textbf{3.79E-2} & \textbf{4.77E-2} & 5.08E-1 \\
+    CVCF_cv10 & \textcolor{green!60!black}{1.66} & \textcolor{green!60!black}{4.30} & 3.77 &  & \textbf{1.10E-2} & \textbf{7.05E-4} & 2.95E-1 \\
+    CVCF_cv5 & \textcolor{green!60!black}{1.52} & \textcolor{green!60!black}{4.37} & 3.60 &  & \textbf{1.77E-2} & \textbf{9.15E-4} & 4.66E-1 \\
+    CVCF_cv7 & \textcolor{green!60!black}{1.57} & \textcolor{green!60!black}{4.29} & 3.70 &  & \textbf{1.40E-2} & \textbf{8.39E-4} & 3.27E-1 \\
+    ENNProb_k3 & \textcolor{green!60!black}{3.10} & \textcolor{green!60!black}{3.15} & 2.41 &  & \textbf{2.48E-2} & \textbf{1.13E-2} & 1.19E-1 \\
+    ENNProb_k5 & \textcolor{green!60!black}{3.13} & \textcolor{green!60!black}{3.10} & 1.34 &  & \textbf{3.27E-2} & \textbf{1.28E-2} & 2.80E-1 \\
+    ENNProb_k9 & \textcolor{green!60!black}{3.70} & \textcolor{green!60!black}{3.01} & 0.62 &  & \textbf{1.45E-2} & \textbf{2.34E-2} & 7.77E-1 \\
+    ENNTh_k3_tau0.5 & \textcolor{green!60!black}{3.95} & \textcolor{green!60!black}{4.43} & 2.66 &  & \textbf{2.62E-2} & \textbf{6.64E-3} & 1.29E-1 \\
+    ENNTh_k3_tau0.7 & \textcolor{green!60!black}{5.88} & \textcolor{green!60!black}{7.32} & \textcolor{green!60!black}{7.77} &  & \textbf{1.86E-3} & \textbf{4.36E-4} & \textbf{9.52E-4} \\
+    ENNTh_k5_tau0.5 & \textcolor{green!60!black}{4.56} & \textcolor{green!60!black}{5.01} & 2.94 &  & \textbf{2.21E-2} & \textbf{5.32E-3} & 1.14E-1 \\
+    ENNTh_k5_tau0.7 & \textcolor{green!60!black}{7.33} & \textcolor{green!60!black}{8.83} & \textcolor{green!60!black}{10.03} &  & \textbf{8.86E-5} & \textbf{4.97E-5} & \textbf{9.52E-4} \\
+    ENNTh_k9_tau0.5 & \textcolor{green!60!black}{5.57} & \textcolor{green!60!black}{5.55} & \textcolor{green!60!black}{4.39} &  & \textbf{4.66E-3} & \textbf{4.66E-3} & \textbf{2.08E-2} \\
+    ENNTh_k9_tau0.7 & \textcolor{green!60!black}{10.64} & \textcolor{green!60!black}{11.59} & \textcolor{green!60!black}{15.05} &  & \textbf{2.11E-5} & \textbf{2.38E-6} & \textbf{1.60E-5} \\
+    ENN_k3 & \textcolor{green!60!black}{3.97} & \textcolor{green!60!black}{4.52} & 3.12 &  & \textbf{3.48E-3} & \textbf{6.19E-3} & 5.23E-2 \\
+    ENN_k5 & \textcolor{green!60!black}{4.37} & \textcolor{green!60!black}{4.15} & 1.40 &  & \textbf{3.22E-3} & \textbf{5.11E-3} & 3.28E-1 \\
+    ENN_k9 & \textcolor{green!60!black}{5.50} & \textcolor{green!60!black}{4.70} & 1.60 &  & \textbf{1.04E-3} & \textbf{1.13E-2} & 2.45E-1 \\
+    EnsembleTh_cv10_tau0.5 & \textcolor{green!60!black}{2.86} & \textcolor{green!60!black}{3.75} & 1.70 &  & \textbf{1.85E-2} & \textbf{7.10E-3} & 4.28E-1 \\
+    EnsembleTh_cv10_tau0.7 & 0.79 & \textcolor{green!60!black}{1.93} & 0.88 &  & 4.17E-1 & \textbf{1.69E-2} & 7.30E-1 \\
+    EnsembleTh_cv5_tau0.5 & \textcolor{green!60!black}{2.57} & \textcolor{green!60!black}{3.75} & 1.70 &  & \textbf{3.45E-2} & \textbf{8.14E-3} & 5.03E-1 \\
+    EnsembleTh_cv5_tau0.7 & 0.88 & \textcolor{green!60!black}{2.10} & 1.34 &  & 2.21E-1 & \textbf{2.67E-2} & 5.43E-1 \\
+    EnsembleTh_cv7_tau0.5 & 2.47 & \textcolor{green!60!black}{4.17} & 2.45 &  & 6.99E-2 & \textbf{2.37E-3} & 1.29E-1 \\
+    EnsembleTh_cv7_tau0.7 & 1.24 & \textcolor{green!60!black}{1.83} & 1.21 &  & 1.91E-1 & \textbf{4.34E-3} & 5.56E-1 \\
+    Ensemble_cv10 & 0.51 & \textcolor{green!60!black}{1.63} & 0.84 &  & 4.28E-1 & \textbf{3.64E-2} & 7.30E-1 \\
+    INFFCTh_cv10_tau0.5 & \textcolor{green!60!black}{5.51} & \textcolor{green!60!black}{5.13} & 1.42 &  & \textbf{1.13E-3} & \textbf{5.05E-4} & 5.29E-1 \\
+    INFFCTh_cv10_tau0.7 & \textcolor{green!60!black}{2.60} & \textcolor{green!60!black}{2.69} & 0.30 &  & \textbf{1.85E-2} & \textbf{1.28E-2} & 9.19E-1 \\
+    INFFCTh_cv5_tau0.5 & \textcolor{green!60!black}{6.33} & \textcolor{green!60!black}{4.86} & 1.79 &  & \textbf{4.97E-5} & \textbf{1.86E-3} & 3.82E-1 \\
+    INFFCTh_cv5_tau0.7 & \textcolor{green!60!black}{2.05} & \textcolor{green!60!black}{3.21} & 1.09 &  & \textbf{3.10E-2} & \textbf{2.42E-2} & 3.60E-1 \\
+    INFFCTh_cv7_tau0.5 & \textcolor{green!60!black}{5.26} & \textcolor{green!60!black}{5.43} & 1.87 &  & \textbf{2.76E-3} & \textbf{1.04E-3} & 2.45E-1 \\
+    INFFCTh_cv7_tau0.7 & \textcolor{green!60!black}{2.60} & \textcolor{green!60!black}{2.84} & 0.67 &  & \textbf{2.77E-2} & \textbf{1.06E-2} & 5.84E-1 \\
+    INFFC_cv10 & \textcolor{green!60!black}{2.00} & \textcolor{green!60!black}{2.01} & -0.48 &  & \textbf{4.27E-2} & \textbf{2.67E-2} & 5.96E-1 \\
+    INFFC_cv5 & \textcolor{green!60!black}{2.39} & 2.30 & 0.12 &  & \textbf{2.93E-2} & 9.20E-2 & 7.00E-1 \\
+    INFFC_cv7 & 1.84 & \textcolor{green!60!black}{2.37} & -0.18 &  & 1.25E-1 & \textbf{2.93E-2} & 7.77E-1 \\
+    IPF_p10_consensus & \textcolor{green!60!black}{1.58} & \textcolor{green!60!black}{4.39} & 3.87 &  & \textbf{7.88E-3} & \textbf{5.91E-4} & 2.36E-1 \\
+    IPF_p10_majority & \textcolor{green!60!black}{9.43} & \textcolor{green!60!black}{10.20} & \textcolor{green!60!black}{9.01} &  & \textbf{1.40E-5} & \textbf{1.72E-4} & \textbf{8.88E-4} \\
+    IPF_p5_consensus & \textcolor{green!60!black}{1.54} & \textcolor{green!60!black}{4.37} & 3.76 &  & \textbf{9.32E-3} & \textbf{1.09E-3} & 3.50E-1 \\
+    IPF_p5_majority & \textcolor{green!60!black}{6.06} & \textcolor{green!60!black}{6.38} & \textcolor{green!60!black}{4.71} &  & \textbf{8.72E-4} & \textbf{1.70E-4} & \textbf{1.13E-2} \\
+    IPF_p7_consensus & \textcolor{green!60!black}{1.54} & \textcolor{green!60!black}{4.23} & 3.71 &  & \textbf{1.40E-2} & \textbf{1.52E-3} & 4.19E-1 \\
+    IPF_p7_majority & \textcolor{green!60!black}{7.89} & \textcolor{green!60!black}{9.44} & \textcolor{green!60!black}{7.64} &  & \textbf{1.53E-4} & \textbf{5.05E-5} & \textbf{1.34E-3} \\
+
+    \end{tblr}
+    \end{table}
+
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+Por otro lado, atendiendo a la figura \ref{fig:rank_mean_grouped_bars_byHiperparamet} encontramos el ranking promedio por modelo específico:
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.5\linewidth]{img/compFiltros/rank_mean_grouped_bars_byHiperparamet.png}
+    \caption{Caption}
+    \label{fig:rank_mean_grouped_bars_byHiperparamet}
+\end{figure}
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+\newpage
+ \subsection{Análisis del tiempo de ejecución}
+ En las figuras \ref{} se muestra un mapa de calor con el tiempo promedio sobre las 5CV en segundos que cada técnica ha tomado en filtrar los datos de entrenamiento:
+
+
+ Observamos así que...\\ \newline
+
+ Por otro lado podríamos poner nuestra atención a cómo escalan dichos tiempo en función del número de instancias a procesar. Si nos fijamos en la figura \ref{}
+
+
+ En las mismas líneas podríamos cuestionarnos si el número de atributos afecta en algún modo al mismo tiempo de cómputo, lo que podemos analizar...
+
+
+
+ \subsection{Capacidad de detección de instancias ruidosas}
+ Una vez analizadas la potencial mejora en la etapa de clasificación así como el costo computacional de la propuesta, ambas frente a los demás modelos, pasamos a analizar la capacidad de detección de instancias potencialmente ruidosas.\\
+ 
+ \subsubsection{A nivel de familia}
+ Para ello comenzaremos poniendo nuestra atención en la tabla \ref{}
+
+ \begin{figure}
+    \caption{Desempeño promedio en marcado de instancias ruidosas según la familia de filtros y el nivel de ruido inducido.}
+    \label{fig:noiseRemoval_byFamily}
+    
+    \hspace{-1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/5noiseRemoval_byFamily.png}
+        \caption{Resultados ruido bajo (5\%).}
+        \label{fig:5noiseRemoval_byFamily}
+    \end{subfigure}
+    \hspace{1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/25noiseRemoval_byFamily.png}
+        \caption{Resultados ruido medio (25\%).}
+        \label{fig:25noiseRemoval_byFamily}
+    \end{subfigure}
+    \hspace{1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/50noiseRemoval_byFamily.png}
+        \caption{Resultados ruido alto (50\%).}
+        \label{fig:50noiseRemoval_byFamily}
+    \end{subfigure}
+ \end{figure}
+
+ 
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+Si nos fijamos en los boxplots asociados a cada familia:
+
+\begin{figure}
+    \caption{Diagramas de cajas sobre el coeficiente de correlación de Matthews por familia y nivel de ruido-}
+    \label{fig:mcc_boxplot_byFamily}
+
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/noiseRemoval/5noiseRemoval_mcc_boxplot.png}
+        \caption{}
+        \label{fig:5noiseRemoval_mcc_boxplot}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/noiseRemoval/25noiseRemoval_mcc_boxplot.png}
+        \caption{}
+        \label{fig:25noiseRemoval_mcc_boxplot}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/noiseRemoval/50noiseRemoval_mcc_boxplot.png}
+        \caption{}
+        \label{fig:50noiseRemoval_mcc_boxplot}
+    \end{subfigure}
+\end{figure}
+
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+
+
+ \begin{figure}
+    \caption{Desempeño promedio en marcado de instancias ruidosas según la hiperaparametrización del filtro y el nivel de ruido inducido.}
+    \label{fig:noiseRemoval_byHiperparam}
+    
+    \hspace{-1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/5noiseRemoval_byHiperparam.png}
+        \caption{Resultados ruido bajo (5\%).}
+        \label{fig:5noiseRemoval_byHiperparam}
+    \end{subfigure}
+    \hspace{1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/25noiseRemoval_byHiperparam.png}
+        \caption{Resultados ruido medio (25\%).}
+        \label{fig:25noiseRemoval_byHiperparam}
+    \end{subfigure}
+    \hspace{1cm}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=1.2\textwidth]{img/noiseRemoval/50noiseRemoval_byHiperparam.png}
+        \caption{Resultados ruido alto (50\%).}
+        \label{fig:50noiseRemoval_byHiperparam}
+    \end{subfigure}
+ \end{figure}
+
+ 
+\textcolor{red}{
+ Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam in lacus a nisi tincidunt congue. Vivamus sed sapien vitae augue aliquam auctor eget vel turpis. Aliquam erat volutpat. Aliquam turpis sapien, dignissim quis nisi eu, sollicitudin ultrices nibh. Vivamus at feugiat dolor, ut rhoncus sapien. Sed ut volutpat dolor. Vestibulum quis nulla imperdiet, semper libero ut, sodales dolor. Suspendisse sollicitudin augue vitae leo ultricies, quis condimentum justo elementum. Cras sed sem suscipit nisi volutpat fringilla. Nam eleifend nibh quis nisl molestie, sed pharetra tellus tempus. Integer facilisis fringilla nisi id efficitur. Nullam nec tincidunt nisi, a lobortis justo. Nunc vitae erat urna. Sed urna dui, tincidunt a velit sit amet, facilisis placerat magna. Curabitur viverra augue et cursus vehicula.\\ 
+Sed ornare imperdiet est at eleifend. In eu sagittis diam. Etiam feugiat turpis quis est elementum, id luctus ligula ornare. Etiam sapien odio, commodo eget tempor quis, maximus et purus. Donec risus ex, gravida eu faucibus quis, ornare sit amet libero. Sed ut cursus tortor, eget porta nibh. Integer elementum sit amet diam id eleifend. Duis a ante eu turpis eleifend ultricies. Pellentesque malesuada in sapien at aliquet. Maecenas viverra scelerisque elit. Nulla tincidunt nisl nec lacus pellentesque, id interdum risus aliquam. Proin leo dui, malesuada at justo vitae, auctor pharetra sapien.
+}\\ \newline
+
+
+
+
+
+
+\chapter{Conclusiones} \label{sect:conclusiones}
+
+\section{Conclusiones generales}
+
+\section{Cumplimiento de objetivos}
+
+\section{Limitaciones del trabajo}
+
+\section{Líneas futuras}
+
+
+\bibliographystyle{abbrv}
+\bibliography{export-data}
+
+\end{document}

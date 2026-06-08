@@ -219,12 +219,14 @@ class TabPFN_CVCF(CVCFFilter):
         vote_margin = np.empty(n_samples, dtype=float)
         vote_entropy = np.empty(n_samples, dtype=float)
 
+        # For each instance to study
         for sample_idx in range(n_samples):
             committee_pred_idx[sample_idx] = self._resolve_committee_prediction(
                 vote_counts[sample_idx],
                 fold_pred_matrix[:, sample_idx],
                 None if fold_confidence_matrix_ is None else fold_confidence_matrix_[:, sample_idx],
             )
+            # Compute an score associated to between-fold agreement
             vote_margin[sample_idx] = float((committee_majority_votes[sample_idx] - second_votes[sample_idx]) / float(n_splits))
             probs = vote_counts[sample_idx] / float(n_splits)
             mask = probs > 0
@@ -341,10 +343,12 @@ class TabPFN_CVCF(CVCFFilter):
         noisy_selected_indices = np.asarray([idx for idx in selected_indices if bool(self.noisy_mask_[idx])], dtype=int)
 
         items = []
+        # For each instance to study
         for sample_idx in selected_indices:
             committee_idx = int(self.committee_pred_idx_[sample_idx])
             fold_explanations = []
 
+            # Analyze what each fold said about it
             for fold in self.fold_history_:
                 predicted_class_idx = int(fold.pred_idx[sample_idx])
                 target_class_idx = self._resolve_target_class_index(
@@ -354,6 +358,7 @@ class TabPFN_CVCF(CVCFFilter):
                     committee_pred_idx=committee_idx,
                 )
 
+                # Initilize the explainer
                 explainer = get_tabpfn_imputation_explainer(
                     model=fold.model,
                     data=self.X_[fold.train_idx],
@@ -363,6 +368,7 @@ class TabPFN_CVCF(CVCFFilter):
                     class_index=target_class_idx,
                 )
 
+                # Extract explanation info
                 interaction_values = explainer.explain(self.X_[sample_idx : sample_idx + 1], budget=budget)
                 main_effects = self._interaction_values_to_main_effects(interaction_values)
                 normalized_effects = self._normalize_vector(main_effects)
@@ -530,13 +536,14 @@ class TabPFN_CVCF(CVCFFilter):
     def _resolve_committee_prediction(self, vote_counts_row, fold_pred_col, fold_conf_col):
         max_votes = int(np.max(vote_counts_row))
         tied = np.flatnonzero(vote_counts_row == max_votes)
+        # Return the winner if there's just one
         if tied.size == 1 or fold_conf_col is None or not np.any(np.isfinite(fold_conf_col)):
             return int(tied[0])
-
+        
+        # If there's a draw between 2 or + classes, use the confidence if available to compute class_pred_scoring
         scores = []
         for class_idx in tied:
             mask = fold_pred_col == class_idx
-            conf = fold_conf_col[mask]
             if conf.size and np.any(np.isfinite(conf)):
                 scores.append(float(np.nanmean(conf)))
             else:
