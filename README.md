@@ -2,6 +2,10 @@
   <img src="logo.png" alt="" width="62">
   <h1 style="margin: 0;">noislearn</h1>
 </div>
+![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)
+
+Documentation site: `https://juamp667.github.io/noislearn/`
+
 `noislearn` is an scikit-learn compatible library for noise filtering, iterative cleaning, and explainability on tabular classification datasets.
 
 ## What is included
