@@ -3,3 +3,11 @@ site/
 dataset/
 results_5cv/
 *.pkl
+temp/
+docs/
+.yml
+all_results/
+results/
+results copy/
+results_5cv_cvc_nos/
+resultsEvaluation/

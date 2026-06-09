@@ -12,20 +12,45 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
 
+# Default C4.5-like tree used by the committee filter.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
 
 
 @dataclass
 class CVCFFilterResult:
+    """Summary of a cross-validated committees filtering run."""
+
     keep_mask: np.ndarray
     noisy_fraction: float
     fold_preds: np.ndarray
     disagree_count: np.ndarray
     noisy_votes: np.ndarray
-    n_models: int
+    n_opect
 
 
 class CVCFFilter(BaseEstimator):
+    """Cross-validated committees noise filter.
+
+    Parameters
+    ----------
+    estimator : estimator, default=c45_like
+        Base learner cloned for each fold of the committee.
+    cv : int, default=10
+        Number of stratified folds used to build the committee.
+    vote_rule : {"threshold", "consensus"}, default="threshold"
+        Rule used to flag samples as noisy from the fold disagreements.
+    threshold : float, default=0.5
+        Minimum fraction of disagreeing folds required when ``vote_rule="threshold"``.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled.
+    random_state : int, default=33
+        Seed used by the stratified splitter.
+
+    Notes
+    -----
+    The current implementation supports removal only; ``action="relabel"`` raises an error.
+    """
+
     def __init__(self, estimator=c45_like, cv: int = 10, vote_rule: str = "threshold", threshold: float = 0.5, action: str = "remove", random_state: int = 33):
         self.estimator = estimator
         self.cv = cv
@@ -45,6 +70,8 @@ class CVCFFilter(BaseEstimator):
         raise ValueError("vote_rule must be 'threshold' or 'consensus'")
 
     def fit(self, X, y):
+        """Fit the filter and cache fold-wise predictions and agreement scores."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -87,6 +114,8 @@ class CVCFFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -96,6 +125,8 @@ class CVCFFilter(BaseEstimator):
         raise Exception("Relabeling has no been implemented yet.")
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         return {
             "n_samples": int(self.X_.shape[0]),

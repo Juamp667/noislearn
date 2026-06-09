@@ -27,6 +27,8 @@ class _BaseFilterOutput:
 
 @dataclass
 class CNCNOSIterationInfo:
+    """Per-iteration diagnostics for CNC-NOS."""
+
     iter_idx: int
     phase: str
     n_samples_before: int
@@ -42,6 +44,8 @@ class CNCNOSIterationInfo:
 
 @dataclass
 class CNCNOSCleanerResult:
+    """Summary of a CNC-NOS cleaning run."""
+
     keep_mask: np.ndarray
     relabel_mask: np.ndarray
     remove_mask: np.ndarray
@@ -61,10 +65,42 @@ class CNCNOSCleaner(BaseEstimator):
 
     Parameters
     ----------
-    base_filters:
-        Optional sequence of estimators or ``(name, estimator)`` pairs.
-        When omitted, a heterogeneous default ensemble is built from the
-        filters shipped with this repository.
+    base_filters : sequence or None, default=None
+        Optional sequence of estimators or ``(name, estimator)`` pairs used as the
+        base ensemble. When omitted, a heterogeneous default ensemble is built from
+        the filters shipped with this repository.
+    base_neighbors : int, default=3
+        Number of neighbors used by the base neighbor-driven filters.
+    score_neighbors : int, default=5
+        Number of neighbors used to compute the weighted noise score.
+    cv : int, default=10
+        Number of folds used by the default cross-validated base filters.
+    metric : str, default="minkowski"
+        Distance metric used by the neighbor-based components.
+    p : int, default=2
+        Minkowski power parameter, only used when ``metric="minkowski"``.
+    max_iter : int, default=10
+        Maximum number of cleaning iterations.
+    stagnation_patience : int, default=2
+        Number of consecutive low-improvement iterations tolerated before stopping.
+    wns_tol : float, default=1e-4
+        Minimum improvement in mean weighted noise score to reset the stagnation counter.
+    final_filtering : bool, default=False
+        Reserved flag for an optional final conservative pass. The current implementation
+        keeps this pass disabled.
+    final_filtering_min_fraction : float, default=0.2
+        Minimum candidate fraction required to activate the optional final pass.
+    min_class_count : int, default=2
+        Minimum number of samples per class that must remain after cleaning.
+    random_state : int, default=33
+        Seed used to initialise the stochastic components.
+    n_jobs : int or None, default=None
+        Parallelism forwarded to the distance-based base filters.
+
+    Notes
+    -----
+    The cleaner combines a candidate selection stage, a weighted noise score and a
+    consensus/majority relabelling step before optionally removing the remaining candidates.
     """
 
     def __init__(
@@ -403,6 +439,8 @@ class CNCNOSCleaner(BaseEstimator):
         return np.array([count_map[label] <= int(self.min_class_count) for label in y], dtype=bool)
 
     def fit(self, X, y):
+        """Fit the cleaner and cache the cleaning history and masks."""
+
         X, y = check_X_y(X, y, accept_sparse=True, dtype=None)
         X = self._as_dense(X)
         y = np.asarray(y)
@@ -734,10 +772,14 @@ class CNCNOSCleaner(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the cleaner and return the cleaned subset."""
+
         self.fit(X, y)
         return self.X_clean_, self.y_clean_subset_
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main cleaning diagnostics."""
+
         r = self.result_
         n_relabelled = int(np.sum(r.relabel_mask))
         n_removed = int(np.sum(r.remove_mask))

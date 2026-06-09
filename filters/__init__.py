@@ -1,3 +1,5 @@
+"""Public filter exports for the noise-cleaning toolkit."""
+
 from .distance_based import (
     AllKNN,
     DISTANCE_BASED_FILTERS,
@@ -32,6 +34,7 @@ from .classifier_based import (
 
 
 def print_available_filters():
+    """Return the names of all built-in filter families."""
     return DISTANCE_BASED_FILTERS + CLASSIFIER_BASED_FILTERS
 
 

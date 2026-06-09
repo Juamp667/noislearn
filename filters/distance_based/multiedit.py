@@ -13,6 +13,24 @@ from sklearn.utils.validation import check_X_y
 
 @dataclass
 class MultiEditFilterResult:
+    """Summary of a Multi-Edit filtering run.
+
+    Attributes
+    ----------
+    keep_mask : ndarray of bool
+        Mask indicating which samples are kept after filtering.
+    noisy_fraction : float
+        Fraction of samples flagged as noisy.
+    removed_total : int
+        Total number of removed samples.
+    n_iters : int
+        Number of cleaning iterations performed.
+    n_blocks : int
+        Number of stratified blocks used per iteration.
+    nn_pred : ndarray
+        Block-wise nearest-neighbor prediction used for relabeling.
+    """
+
     keep_mask: np.ndarray
     noisy_fraction: float
     removed_total: int
@@ -22,6 +40,32 @@ class MultiEditFilterResult:
 
 
 class MultiEditFilter(BaseEstimator):
+    """Multi-Edit noise filter.
+
+    Parameters
+    ----------
+    n_neighbors : int, default=3
+        Number of neighbors used by the block-wise KNN classifier.
+    n_blocks : int, default=10
+        Number of stratified blocks built at each iteration.
+    metric : str, default="minkowski"
+        Distance metric used by the internal KNN classifiers.
+    p : int, default=2
+        Minkowski power parameter, only used when ``metric="minkowski"``.
+    action : {"remove", "relabel"}, default="remove"
+        Whether to drop noisy samples or replace their labels with the block prediction.
+    random_state : int, default=33
+        Seed used to shuffle the stratified blocks.
+    n_jobs : int or None, default=None
+        Parallelism forwarded to the internal KNN classifiers.
+    max_iter : int or None, default=None
+        Optional maximum number of refinement iterations.
+
+    Notes
+    -----
+    Each iteration predicts one block from another block of the same stratified partition.
+    """
+
     def __init__(self, n_neighbors: int = 3, n_blocks: int = 10, metric: str = "minkowski", p: int = 2, action: str = "remove", random_state: int = 33, n_jobs: Optional[int] = None, max_iter: Optional[int] = None):
         self.n_neighbors = n_neighbors
         self.n_blocks = n_blocks
@@ -70,6 +114,8 @@ class MultiEditFilter(BaseEstimator):
         return [np.asarray(block, dtype=int) for block in blocks]
 
     def fit(self, X, y):
+        """Fit the filter and iteratively remove misclassified instances."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -151,6 +197,8 @@ class MultiEditFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -162,6 +210,8 @@ class MultiEditFilter(BaseEstimator):
         return self.X_, y_new
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         return {
             "n_samples": int(self.X_.shape[0]),

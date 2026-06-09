@@ -1,3 +1,5 @@
+"""TabPFN-based cross-validated noise filtering with local explanations."""
+
 from __future__ import annotations
 
 import warnings
@@ -16,6 +18,8 @@ from ..classification import ClassificationFilter, ClassificationFilterResult
 
 @dataclass
 class TabPFNFoldInfo:
+    """Per-fold diagnostics collected during a TabPFN cross-validation run."""
+
     fold_idx: int
     train_idx: np.ndarray
     test_idx: np.ndarray
@@ -32,6 +36,8 @@ class TabPFNFoldInfo:
 
 @dataclass
 class TabPFNNoiseExplanation:
+    """Local explanation for a single sample flagged by TabPFN."""
+
     sample_idx: int
     fold_idx: int
     true_label_idx: int
@@ -50,6 +56,8 @@ class TabPFNNoiseExplanation:
 
 @dataclass
 class TabPFNExplanationReport:
+    """Container for TabPFN filter explanations and fold diagnostics."""
+
     items: list[TabPFNNoiseExplanation]
     folds: list[TabPFNFoldInfo]
     sample_indices: np.ndarray
@@ -63,15 +71,23 @@ class TabPFNExplanationReport:
     imputer: str
 
     def __iter__(self):
+        """Iterate over the stored explanations."""
+
         return iter(self.items)
 
     def __len__(self):
+        """Return the number of stored explanations."""
+
         return len(self.items)
 
     def __getitem__(self, item):
+        """Return the explanation at the given position."""
+
         return self.items[item]
 
     def by_fold(self):
+        """Group the stored explanations by fold index."""
+
         grouped = {}
         for item in self.items:
             grouped.setdefault(item.fold_idx, []).append(item)
@@ -79,7 +95,25 @@ class TabPFNExplanationReport:
 
 
 class TabPFN_CF(ClassificationFilter):
-    """Cross-validated TabPFN label-noise filter with fold-aware explanations."""
+    """Cross-validated TabPFN label-noise filter with fold-aware explanations.
+
+    Parameters
+    ----------
+    cv : int, default=10
+        Number of stratified folds used to generate out-of-fold predictions.
+    random_state : int, default=33
+        Seed used by the stratified splitter and forwarded to TabPFN.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled. The current
+        ``fit_resample`` implementation only supports removal.
+    tabpfn_params : dict or None, default=None
+        Keyword arguments forwarded to :class:`tabpfn.TabPFNClassifier`.
+
+    Notes
+    -----
+    Explanations are computed with SHAP-based tooling from ``tabpfn_extensions``.
+    Using ``fit_mode="fit_with_cache"`` is recommended for faster and more stable explanations.
+    """
 
     def __init__(self, cv=10, random_state=33, action="remove", tabpfn_params=None):
         params = {} if tabpfn_params is None else dict(tabpfn_params)
@@ -95,6 +129,8 @@ class TabPFN_CF(ClassificationFilter):
         )
 
     def fit(self, X, y):
+        """Fit the filter and cache fold-wise predictions and diagnostics."""
+
         feature_names = None
         if hasattr(X, "columns"):
             feature_names = np.asarray(list(X.columns), dtype=object)
@@ -198,6 +234,8 @@ class TabPFN_CF(ClassificationFilter):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -210,6 +248,8 @@ class TabPFN_CF(ClassificationFilter):
         raise ValueError("action must be 'remove'")#
 
     def get_filter_report(self):
+        """Return a dictionary with the main fit diagnostics."""
+
         check_is_fitted(self, ["result_", "fold_history_"])
         return {
             "n_samples": int(self.X_.shape[0]),
@@ -222,6 +262,8 @@ class TabPFN_CF(ClassificationFilter):
         }
 
     def get_fold_history(self):
+        """Return the stored per-fold diagnostics."""
+
         check_is_fitted(self, ["fold_history_"])
         return list(self.fold_history_)
 

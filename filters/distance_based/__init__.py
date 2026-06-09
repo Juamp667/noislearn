@@ -1,3 +1,5 @@
+"""Public exports for distance-based label-noise filters."""
+
 try:
     from .aknn import AllKNN
 except ModuleNotFoundError:
@@ -10,7 +12,7 @@ try:
     from .tomeklinks import TomekLinks
 except ModuleNotFoundError:
     TomekLinks = None
-
+# Ordered list of the distance-based filters exposed by this package.
 DISTANCE_BASED_FILTERS = [
     "ENNFilter",
     "ENNProb",

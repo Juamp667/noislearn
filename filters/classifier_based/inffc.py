@@ -14,6 +14,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
 
+# Default classifiers used to bootstrap the heterogeneous committee.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
 knn1_like = KNeighborsClassifier(n_neighbors=1)
 lda_like = LinearDiscriminantAnalysis()
@@ -21,6 +22,8 @@ lda_like = LinearDiscriminantAnalysis()
 
 @dataclass
 class INFFCIterationInfo:
+    """Per-iteration diagnostics for INFFC."""
+
     iter_idx: int
     n_samples_before: int
     n_flagged: int
@@ -30,6 +33,8 @@ class INFFCIterationInfo:
 
 @dataclass
 class INFFCFilterResult:
+    """Summary of an INFFC filtering run."""
+
     keep_mask: np.ndarray
     noisy_fraction: float
     noisy_votes: np.ndarray
@@ -39,6 +44,33 @@ class INFFCFilterResult:
 
 
 class INFFCFilter(BaseEstimator):
+    """Iterative fusion-of-classifiers noise filter.
+
+    Parameters
+    ----------
+    estimators : sequence of estimators or None, default=None
+        Base learners used by the committee. If ``None``, a default trio of
+        C4.5-like tree, 1-NN and LDA is used.
+    cv : int, default=10
+        Number of stratified folds used inside each iteration.
+    decision_rule : {"majority", "consensus", "threshold"}, default="majority"
+        Rule used to flag a sample as noisy from the committee disagreements.
+    threshold : float, default=0.5
+        Minimum disagreement fraction required when ``decision_rule="threshold"``.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled.
+    max_iter : int, default=20
+        Maximum number of cleaning iterations.
+    max_removed_frac : float, default=0.5
+        Stop once this fraction of the original training set has been removed.
+    random_state : int, default=33
+        Seed used by the stratified splitter in each iteration.
+
+    Notes
+    -----
+    The current implementation only supports removal; ``action="relabel"`` raises an error.
+    """
+
     def __init__(self, estimators=None, cv: int = 10, decision_rule: str = "majority", threshold: float = 0.5, action: str = "remove", max_iter: int = 20, max_removed_frac: float = 0.5, random_state: int = 33):
         self.estimators = estimators
         self.cv = cv
@@ -66,6 +98,8 @@ class INFFCFilter(BaseEstimator):
         raise ValueError("decision_rule must be 'consensus', 'majority', or 'threshold'")
 
     def fit(self, X, y):
+        """Fit the filter and iteratively remove noisy samples."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -155,6 +189,8 @@ class INFFCFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -162,6 +198,8 @@ class INFFCFilter(BaseEstimator):
         return self.X_, self.y_
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         last = r.history[-1] if r.history else None
         return {"n_samples": int(self.X_.shape[0]), "n_models": int(r.n_models), "n_iters": int(r.n_iters), "decision_rule": self.decision_rule, "action": self.action, "fraction_removed_or_flagged": float(r.noisy_fraction), "last_iter_flagged": int(last.n_flagged) if last else 0, "last_iter_frac_flagged": float(last.frac_flagged) if last else 0.0, "cv": int(self.cv), "threshold": float(self.threshold) if self.decision_rule == "threshold" else None, "max_iter": int(self.max_iter), "max_removed_frac": float(self.max_removed_frac)}

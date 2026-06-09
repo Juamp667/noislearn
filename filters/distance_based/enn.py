@@ -13,6 +13,24 @@ from sklearn.utils.validation import check_X_y
 
 @dataclass
 class ENNFilterResult:
+    """Summary of an edited nearest-neighbor filtering run.
+
+    Attributes
+    ----------
+    keep_mask : ndarray of bool
+        Mask indicating which samples are kept after filtering.
+    noisy_fraction : float
+        Fraction of samples flagged as noisy.
+    nn_pred : ndarray
+        Majority-vote label predicted from the selected neighbors.
+    disagree_count : ndarray
+        Number of neighbors whose label differs from the observed label.
+    neighbor_count_used : ndarray
+        Number of neighbors actually used for each sample.
+    kth_distance : ndarray
+        Distance to the kth neighbor used to define the neighborhood.
+    """
+
     keep_mask: np.ndarray
     noisy_fraction: float
     nn_pred: np.ndarray
@@ -22,6 +40,33 @@ class ENNFilterResult:
 
 
 class ENNFilter(BaseEstimator):
+    """Edited nearest-neighbor noise filter.
+
+    Parameters
+    ----------
+    n_neighbors : int, default=3
+        Number of neighbors used to vote on each sample.
+    mode : {"enn", "menn"}, default="enn"
+        ``"enn"`` uses the fixed k nearest neighbors.
+        ``"menn"`` expands the candidate neighborhood until predictions stabilize.
+    metric : str, default="minkowski"
+        Distance metric used by :class:`sklearn.neighbors.NearestNeighbors`.
+    p : int, default=2
+        Minkowski power parameter, only used when ``metric="minkowski"``.
+    tie_eps : float, default=1e-12
+        Tolerance used to include neighbors tied at the kth distance.
+    action : {"remove", "relabel"}, default="remove"
+        Whether to drop noisy samples or replace their labels with the neighbor vote.
+    n_jobs : int or None, default=None
+        Parallelism forwarded to the nearest-neighbor search.
+    candidate_strategy : {"full", "expansive"}, default="expansive"
+        Strategy used to grow the candidate set in ``"menn"`` mode.
+
+    Notes
+    -----
+    A sample is flagged as noisy when the neighborhood vote differs from the observed label.
+    """
+
     def __init__(self, n_neighbors: int = 3, mode: str = "enn", metric: str = "minkowski", p: int = 2, tie_eps: float = 1e-12, action: str = "remove", n_jobs: Optional[int] = None, candidate_strategy: str = "expansive"):
         self.n_neighbors = n_neighbors
         self.mode = mode
@@ -52,6 +97,8 @@ class ENNFilter(BaseEstimator):
         return sizes
 
     def fit(self, X, y):
+        """Fit the filter and cache nearest-neighbor predictions."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -138,6 +185,8 @@ class ENNFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -148,5 +197,7 @@ class ENNFilter(BaseEstimator):
         return self.X_, y_new
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         return {"n_samples": int(self.X_.shape[0]), "mode": self.mode, "candidate_strategy": self.candidate_strategy, "n_neighbors_k": int(self.n_neighbors), "avg_neighbors_used": float(np.mean(r.neighbor_count_used)), "max_neighbors_used": int(np.max(r.neighbor_count_used)), "removed_or_flagged": int((~r.keep_mask).sum()), "fraction_flagged": float(r.noisy_fraction), "metric": self.metric, "p": int(self.p) if self.metric == "minkowski" else None, "tie_eps": float(self.tie_eps), "action": self.action}

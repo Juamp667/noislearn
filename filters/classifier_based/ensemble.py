@@ -12,6 +12,8 @@ from sklearn.utils.validation import check_X_y
 
 @dataclass
 class EnsembleFilterResult:
+    """Summary of an ensemble-based noise filtering run."""
+
     keep_mask: np.ndarray
     noisy_fraction: float
     noisy_votes: np.ndarray
@@ -19,6 +21,31 @@ class EnsembleFilterResult:
 
 
 class EnsembleFiltering(BaseEstimator):
+    """Ensemble-based noise filter using multiple classifiers.
+
+    Parameters
+    ----------
+    estimators : sequence of estimators
+        Base learners combined in the ensemble committee.
+    cv : int, default=10
+        Number of stratified folds used to compute out-of-fold predictions.
+    mode : str, default="S"
+        Decision rule used to flag samples as noisy. The current implementation
+        accepts ``"threshold"`` and ``"consensus"``; the signature default is kept for compatibility.
+    threshold : float, default=0.5
+        Minimum fraction of disagreeing estimators required when ``mode="threshold"``.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled.
+    random_state : int, default=33
+        Seed used by the stratified splitter.
+    return_noisy_samples : bool, default=False
+        Stored on the instance for compatibility; the current implementation does not branch on it.
+
+    Notes
+    -----
+    A sample is flagged as noisy when enough estimators disagree with its observed label.
+    """
+
     def __init__(self, estimators, cv=10, mode="S", threshold=0.5, action="remove", random_state=33, return_noisy_samples=False):
         self.estimators = estimators
         self.cv = cv
@@ -29,6 +56,8 @@ class EnsembleFiltering(BaseEstimator):
         self.return_noisy_samples = return_noisy_samples
 
     def fit(self, X, y):
+        """Fit the filter and cache ensemble disagreement counts."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         self.classes_, y_idx = np.unique(y, return_inverse=True)
         n = X.shape[0]
@@ -65,12 +94,16 @@ class EnsembleFiltering(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered data."""
+
         self.fit(X, y)
         if self.action == "remove":
             return self.X_[self.result_.keep_mask], self.y_[self.result_.keep_mask]
         raise ValueError("action='relabel' is not implemented yet")
 
     def get_filter_report(self):
+        """Return a dictionary with the main fit diagnostics."""
+
         return {
             "n_samples": int(self.X_.shape[0]),
             "n_models": int(self.result_.n_models),

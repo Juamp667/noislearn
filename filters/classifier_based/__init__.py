@@ -1,11 +1,12 @@
+"""Public exports for classifier-based label-noise filters."""
+
 from .classification import ClassificationFilter, ClassificationFilterResult
 from .cvcf import CVCFFilter, CVCFFilterResult
 from .ensemble import EnsembleFiltering, EnsembleFilterResult
 from .inffc import INFFCFilter, INFFCFilterResult, INFFCIterationInfo
 from .iterative_partitioning import IPFIterationInfo, IterativePartitioningFilter, IterativePartitioningFilterResult, c45_like
 from .TabPFN_based import *
-
-
+# Ordered list of the classifier-based filters exposed by this package.
 CLASSIFIER_BASED_FILTERS = [
     "ClassificationFilter",
     "CVCFFilter",

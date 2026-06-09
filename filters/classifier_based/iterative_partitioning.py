@@ -12,11 +12,14 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
 
+# Default C4.5-like tree used by the iterative partitioning filter.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
 
 
 @dataclass
 class IPFIterationInfo:
+    """Per-iteration diagnostics for iterative partitioning filtering."""
+
     iter_idx: int
     n_samples_before: int
     n_flagged: int
@@ -27,6 +30,8 @@ class IPFIterationInfo:
 
 @dataclass
 class IterativePartitioningFilterResult:
+    """Summary of an iterative partitioning filtering run."""
+
     keep_mask: np.ndarray
     noisy_fraction: float
     noisy_votes: np.ndarray
@@ -36,6 +41,32 @@ class IterativePartitioningFilterResult:
 
 
 class IterativePartitioningFilter(BaseEstimator):
+    """Iterative partitioning noise filter.
+
+    Parameters
+    ----------
+    estimator : estimator, default=c45_like
+        Base learner fitted on each partition.
+    n_partitions : int, default=10
+        Number of stratified partitions built at each iteration.
+    vote_rule : {"majority", "consensus"}, default="majority"
+        Rule used to flag a sample as noisy from the partition disagreements.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled.
+    p_stop : float, default=0.01
+        Patience threshold expressed as a fraction of the original dataset.
+    k_patience : int, default=3
+        Number of consecutive low-yield iterations tolerated before stopping.
+    max_iter : int, default=20
+        Maximum number of cleaning iterations.
+    random_state : int, default=33
+        Seed used by the stratified splitter in each iteration.
+
+    Notes
+    -----
+    When ``action="relabel"``, the majority vote of the partition models is used as the new label.
+    """
+
     def __init__(self, estimator=c45_like, n_partitions: int = 10, vote_rule: str = "majority", action: str = "remove", p_stop: float = 0.01, k_patience: int = 3, max_iter: int = 20, random_state: int = 33):
         self.estimator = estimator
         self.n_partitions = n_partitions
@@ -54,6 +85,8 @@ class IterativePartitioningFilter(BaseEstimator):
         raise ValueError("vote_rule must be 'majority' or 'consensus'")
 
     def fit(self, X, y):
+        """Fit the filter and iteratively partition the training data."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -109,6 +142,8 @@ class IterativePartitioningFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -116,6 +151,8 @@ class IterativePartitioningFilter(BaseEstimator):
         return self.X_, self.y_
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         last = r.history[-1] if r.history else None
         return {"n_samples": int(self.X_.shape[0]), "n_models_per_iter": int(r.n_models), "n_iters": int(r.n_iters), "vote_rule": self.vote_rule, "action": self.action, "fraction_removed_or_flagged": float(r.noisy_fraction), "last_iter_flagged": int(last.n_flagged) if last else 0, "last_iter_frac_flagged": float(last.frac_flagged) if last else 0.0, "p_stop": float(self.p_stop), "k_patience": int(self.k_patience), "max_iter": int(self.max_iter)}

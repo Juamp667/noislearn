@@ -13,6 +13,22 @@ from sklearn.utils.validation import check_X_y
 
 @dataclass
 class NCNEditFilterResult:
+    """Summary of an NCNEdit filtering run.
+
+    Attributes
+    ----------
+    keep_mask : ndarray of bool
+        Mask indicating which samples are kept after filtering.
+    noisy_fraction : float
+        Fraction of samples flagged as noisy.
+    ncn_pred : ndarray
+        Prediction obtained from the centroid-based neighborhood vote.
+    disagree_count : ndarray
+        Number of neighbors whose label differs from the observed label.
+    neighbor_count_used : ndarray
+        Number of neighbors actually used for each sample.
+    """
+
     keep_mask: np.ndarray
     noisy_fraction: float
     ncn_pred: np.ndarray
@@ -21,11 +37,28 @@ class NCNEditFilterResult:
 
 
 class NCNEdit(BaseEstimator):
-    ''' 
-    Similar to ENN, but selecting the neighborhood recursively by storing the points that minimize the 
-    distance between the sample to filter and the centroid of its neighborhood (which does not consider 
-    the point to filter).
-    '''
+    """Nearest-centroid-neighbor noise filter.
+
+    Parameters
+    ----------
+    n_neighbors : int, default=3
+        Number of neighbors used to build the centroid-based neighborhood.
+    metric : str, default="minkowski"
+        Distance metric used by :class:`sklearn.neighbors.NearestNeighbors`.
+    p : int, default=2
+        Minkowski power parameter, only used when ``metric="minkowski"``.
+    action : {"remove", "relabel"}, default="remove"
+        Whether to drop noisy samples or replace their labels with the NCN vote.
+    n_jobs : int or None, default=None
+        Parallelism forwarded to the nearest-neighbor search.
+    candidate_strategy : {"full", "expansive"}, default="expansive"
+        Strategy used to grow the candidate set while selecting the centroid-nearest neighbors.
+
+    Notes
+    -----
+    The neighborhood is built recursively by adding the candidate that minimizes the distance
+    between the sample and the centroid of the partial neighborhood.
+    """
     def __init__(self, n_neighbors: int = 3, metric: str = "minkowski", p: int = 2, action: str = "remove", n_jobs: Optional[int] = None, candidate_strategy: str = "expansive"):
         self.n_neighbors = n_neighbors
         self.metric = metric
@@ -83,6 +116,8 @@ class NCNEdit(BaseEstimator):
         return np.asarray(selected, dtype=int)
 
     def fit(self, X, y):
+        """Fit the filter and cache the NCN-based predictions."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
@@ -174,6 +209,8 @@ class NCNEdit(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
 
         if self.action == "remove":
@@ -186,6 +223,8 @@ class NCNEdit(BaseEstimator):
         return self.X_, y_new
 
     def get_filter_report(self) -> Dict[str, Any]:
+        """Return a dictionary with the main fit diagnostics."""
+
         r = self.result_
         return {
             "n_samples": int(self.X_.shape[0]),

@@ -1,3 +1,5 @@
+"""TabPFN-based committee filtering with aggregated explanations."""
+
 from __future__ import annotations
 
 import warnings
@@ -16,6 +18,8 @@ from ..cvcf import CVCFFilter, CVCFFilterResult
 
 @dataclass
 class TabPFNCommitteeFoldInfo:
+    """Per-fold diagnostics collected during a TabPFN committee run."""
+
     fold_idx: int
     train_idx: np.ndarray
     test_idx: np.ndarray
@@ -30,6 +34,8 @@ class TabPFNCommitteeFoldInfo:
 
 @dataclass
 class TabPFNCommitteeFoldExplanation:
+    """Local explanation computed for one fold and one sample."""
+
     sample_idx: int
     fold_idx: int
     train_idx: np.ndarray
@@ -49,6 +55,8 @@ class TabPFNCommitteeFoldExplanation:
 
 @dataclass
 class TabPFNCommitteeAggregatedView:
+    """Aggregated feature contribution view for a sample."""
+
     name: str
     fold_indices: np.ndarray
     target_class_idx: int | None
@@ -62,6 +70,8 @@ class TabPFNCommitteeAggregatedView:
 
 @dataclass
 class TabPFNCommitteeSampleExplanation:
+    """Complete explanation summary for one sample under the TabPFN committee filter."""
+
     sample_idx: int
     true_label_idx: int
     true_label: Any
@@ -83,6 +93,8 @@ class TabPFNCommitteeSampleExplanation:
 
 @dataclass
 class TabPFNCommitteeExplanationReport:
+    """Container for TabPFN committee explanations and fold diagnostics."""
+
     items: list[TabPFNCommitteeSampleExplanation]
     folds: list[TabPFNCommitteeFoldInfo]
     sample_indices: np.ndarray
@@ -96,15 +108,23 @@ class TabPFNCommitteeExplanationReport:
     imputer: str
 
     def __iter__(self):
+        """Iterate over the stored sample explanations."""
+
         return iter(self.items)
 
     def __len__(self):
+        """Return the number of stored sample explanations."""
+
         return len(self.items)
 
     def __getitem__(self, item):
+        """Return the sample explanation at the given position."""
+
         return self.items[item]
 
     def by_fold(self):
+        """Group the fold explanations by fold index."""
+
         grouped = {}
         for item in self.items:
             for fold_exp in item.fold_explanations:
@@ -114,11 +134,35 @@ class TabPFNCommitteeExplanationReport:
         return grouped
 
     def by_sample(self):
+        """Return the sample explanations indexed by sample id."""
+
         return {item.sample_idx: item for item in self.items}
 
 
 class TabPFN_CVCF(CVCFFilter):
-    """Cross-validated TabPFN committee filter with fold-aware explanations."""
+    """Cross-validated TabPFN committee filter with fold-aware explanations.
+
+    Parameters
+    ----------
+    cv : int, default=10
+        Number of stratified folds used to build the committee.
+    vote_rule : {"consensus", "threshold"}, default="consensus"
+        Rule used to flag samples as noisy from the fold disagreements.
+    threshold : float, default=0.5
+        Minimum fraction of disagreeing folds required when ``vote_rule="threshold"``.
+    random_state : int, default=33
+        Seed used by the stratified splitter and forwarded to TabPFN.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled. The current
+        ``fit_resample`` implementation only supports removal.
+    tabpfn_params : dict or None, default=None
+        Keyword arguments forwarded to :class:`tabpfn.TabPFNClassifier`.
+
+    Notes
+    -----
+    Explanations are computed fold by fold and then aggregated into all-fold and majority-fold views.
+    Using ``fit_mode="fit_with_cache"`` is recommended for faster and more stable explanations.
+    """
 
     def __init__(self, cv=10, vote_rule="consensus", threshold=0.5, random_state=33, action="remove", tabpfn_params=None):
         params = {} if tabpfn_params is None else dict(tabpfn_params)
@@ -136,6 +180,8 @@ class TabPFN_CVCF(CVCFFilter):
         )
 
     def fit(self, X, y):
+        """Fit the filter and cache committee predictions and diagnostics."""
+
         feature_names = None
         if hasattr(X, "columns"):
             feature_names = np.asarray(list(X.columns), dtype=object)
@@ -266,6 +312,8 @@ class TabPFN_CVCF(CVCFFilter):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -273,6 +321,8 @@ class TabPFN_CVCF(CVCFFilter):
         raise ValueError("action='relabel' is not implemented yet.")
 
     def get_filter_report(self):
+        """Return a dictionary with the main fit diagnostics."""
+
         check_is_fitted(self, ["result_", "fold_history_", "committee_confidence_"])
         return {
             "n_samples": int(self.X_.shape[0]),
@@ -290,6 +340,8 @@ class TabPFN_CVCF(CVCFFilter):
         }
 
     def get_fold_history(self):
+        """Return the stored per-fold diagnostics."""
+
         check_is_fitted(self, ["fold_history_"])
         return list(self.fold_history_)
 

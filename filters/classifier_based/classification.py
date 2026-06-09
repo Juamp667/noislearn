@@ -12,12 +12,32 @@ from sklearn.utils.validation import check_X_y
 
 @dataclass
 class ClassificationFilterResult:
+    """Summary of a single-classifier noise filtering run."""
+
     keep_mask: np.ndarray
     noisy_fraction: float
     oof_pred: np.ndarray
 
 
 class ClassificationFilter(BaseEstimator):
+    """Cross-validated single-classifier noise filter.
+
+    Parameters
+    ----------
+    estimator : estimator
+        Base learner cloned and trained on each fold.
+    cv : int, default=10
+        Number of stratified folds used to generate out-of-fold predictions.
+    action : {"remove", "relabel"}, default="remove"
+        Whether noisy samples are dropped or relabelled with the out-of-fold prediction.
+    random_state : int, default=33
+        Seed used by the stratified splitter.
+
+    Notes
+    -----
+    A sample is flagged as noisy when its out-of-fold prediction differs from the observed label.
+    """
+
     def __init__(self, estimator, cv=10, action="remove", random_state=33):
         self.estimator = estimator
         self.cv = cv
@@ -25,6 +45,8 @@ class ClassificationFilter(BaseEstimator):
         self.random_state = random_state
 
     def fit(self, X, y):
+        """Fit the filter and cache out-of-fold predictions."""
+
         X, y = check_X_y(X, y, accept_sparse=True)
         self.classes_, y_idx = np.unique(y, return_inverse=True)
         n = X.shape[0]
@@ -46,6 +68,8 @@ class ClassificationFilter(BaseEstimator):
         return self
 
     def fit_resample(self, X, y):
+        """Fit the filter and return the filtered or relabelled data."""
+
         self.fit(X, y)
         if self.action == "remove":
             km = self.result_.keep_mask
@@ -58,6 +82,8 @@ class ClassificationFilter(BaseEstimator):
         raise ValueError("action must be 'remove' or 'relabel'")
 
     def get_filter_report(self):
+        """Return a dictionary with the main fit diagnostics."""
+
         return {
             "n_samples": int(self.X_.shape[0]),
             "removed_or_flagged": int((~self.result_.keep_mask).sum()),
