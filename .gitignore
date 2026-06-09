@@ -1,15 +1,11 @@
 toDo.md
-site/
 dataset/
 results_5cv/
 *.pkl
 temp/
-docs/
-
 all_results/
 results/
 results copy/
 results_5cv_cnc nos/
 resultsEvaluation/
 .Rhistory
-requirements-docs.txt
