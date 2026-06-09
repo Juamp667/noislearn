@@ -5,7 +5,7 @@ results_5cv/
 *.pkl
 temp/
 docs/
-*.yml
+
 all_results/
 results/
 results copy/
