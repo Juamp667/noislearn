@@ -2,6 +2,8 @@ site_name: noislearn
 site_description: Noise filtering and cleaning for tabular classification datasets.
 docs_dir: docs
 site_dir: site
+site_url: https://juamp667.github.io/noislearn/
+use_directory_urls: true
 
 theme:
   name: material

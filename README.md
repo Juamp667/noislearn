@@ -21,21 +21,44 @@
 - The main noise-filtering families are implemented and exported from `filters/`.
 - CNC-NOS is available as a higher-level cleaner in `cleaners/`.
 - TabPFN-based filters include local SHAP-based explanation reports for noisy-instance inspection.
-- 
+
 
 ## Repository structure
 
 - `filters/`: distance-based and classifier-based filtering algorithms.
 - `cleaners/`: higher-level noise cleaning pipelines.
 - `noisers/`: label-noise generation utilities.
+- `mkdocs.yml`: documentation configuration.
+- `docs/`: MkDocs source for the public documentation site.
 - `requirements-docs.txt`: documentation dependencies.
 - `noise_cv_eval.py`: evaluation script for 5-fold experiments.
 - `testFuncs.py`: dataset loading and evaluation helpers.
 - `*.ipynb`: notebooks for experimentation and result analysis.
 
-## ## Roadmap
+## Roadmap
 
 - RNGE.
 - CEWS.
 - Relabel support in the remaining filters that still only remove noisy instances.
 - Continued CNC-NOS tuning and benchmark analysis.
+
+## Documentation
+
+The API documentation is built with MkDocs Material and generated from the public docstrings.
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-docs.txt
+mkdocs serve
+```
+
+Open `http://127.0.0.1:8000` to preview it locally.
+
+The documentation is also configured for GitHub Pages. The workflow in `.github/workflows/deploy-docs.yml` builds and publishes the site automatically on pushes to `main`.
+
+To build the static site locally:
+
+```bash
+mkdocs build --strict
+```

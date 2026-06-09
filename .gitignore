@@ -5,9 +5,11 @@ results_5cv/
 *.pkl
 temp/
 docs/
-.yml
+*.yml
 all_results/
 results/
 results copy/
 results_5cv_cnc nos/
 resultsEvaluation/
+.Rhistory
+requirements-docs.txt
