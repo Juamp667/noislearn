@@ -4,7 +4,7 @@
 </div>
 ![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)
 
-Documentation site: `https://juamp667.github.io/noislearn/`
+Documentation site: `https://noislearn.org/`
 
 `noislearn` is an scikit-learn compatible library for noise filtering, iterative cleaning, and explainability on tabular classification datasets.
 
@@ -59,7 +59,7 @@ mkdocs serve
 
 Open `http://127.0.0.1:8000` to preview it locally.
 
-The documentation is also configured for GitHub Pages. The workflow in `.github/workflows/deploy-docs.yml` builds and publishes the site automatically on pushes to `main`.
+The documentation is also configured for GitHub Pages and can be published under the custom domain `noislearn.org`.
 
 To build the static site locally:
 
