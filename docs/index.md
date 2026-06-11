@@ -5,6 +5,10 @@ hide:
 
 # noislearn
 
+<p align="center">
+  <img src="../logo.png" alt="noislearn logo" width="180">
+</p>
+
 `noislearn` is an scikit-learn compatible toolkit for label-noise filtering, iterative cleaning, and explainable inspection of noisy decisions.
 
 <div class="hero-meta">

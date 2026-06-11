@@ -8,6 +8,8 @@ use_directory_urls: true
 theme:
   name: material
   language: en
+  logo: logo.png
+  favicon: logo.png
   features:
     - navigation.tabs
     - navigation.sections
