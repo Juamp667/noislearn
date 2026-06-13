@@ -13,8 +13,10 @@ CLASSIFIER_BASED_FILTERS = [
     "EnsembleFiltering",
     "INFFCFilter",
     "IterativePartitioningFilter",
-    "TABPFNClassificationFilter",
 ]
+
+if TABPFNClassificationFilter is not None:
+    CLASSIFIER_BASED_FILTERS.append("TABPFNClassificationFilter")
 
 __all__ = [
     "CLASSIFIER_BASED_FILTERS",

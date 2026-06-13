@@ -14,6 +14,7 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from tabpfn import TabPFNClassifier
 
 from ..cvcf import CVCFFilter, CVCFFilterResult
+from ..._detection import attach_detection_report, resample_by_action, validate_action
 
 
 @dataclass
@@ -152,9 +153,8 @@ class TabPFN_CVCF(CVCFFilter):
         Minimum fraction of disagreeing folds required when ``vote_rule="threshold"``.
     random_state : int, default=33
         Seed used by the stratified splitter and forwarded to TabPFN.
-    action : {"remove", "relabel"}, default="remove"
-        Whether noisy samples are dropped or relabelled. The current
-        ``fit_resample`` implementation only supports removal.
+    action : {"remove", "detect"}, default="remove"
+        Whether noisy samples are dropped or only detected. Relabel is not implemented yet.
     tabpfn_params : dict or None, default=None
         Keyword arguments forwarded to :class:`tabpfn.TabPFNClassifier`.
 
@@ -195,6 +195,7 @@ class TabPFN_CVCF(CVCFFilter):
             raise ValueError("cv must be >= 2")
         if n_samples < n_splits:
             raise ValueError(f"Need n_samples >= cv. Got n_samples={n_samples}, cv={self.cv}.")
+        validate_action(self.action)
 
         self.n_features_in_ = int(n_features)
         if feature_names is None:
@@ -208,8 +209,7 @@ class TabPFN_CVCF(CVCFFilter):
 
         fold_history = []
         fold_pred_matrix = np.empty((n_splits, n_samples), dtype=int)
-        fold_confidence_matrix = np.full((n_splits, n_samples), np.nan, dtype=float)
-        has_confidence = False
+        fold_confidence_matrix = np.ones((n_splits, n_samples), dtype=float)
 
         for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X, y_idx)):
             model = clone(self.estimator)
@@ -227,7 +227,6 @@ class TabPFN_CVCF(CVCFFilter):
                 if proba.ndim == 2 and proba.shape[0] == n_samples:
                     confidence = np.take_along_axis(proba, pred_idx[:, None], axis=1).ravel()
                     fold_confidence_matrix[fold_idx] = confidence
-                    has_confidence = True
 
             fold_pred_matrix[fold_idx] = pred_idx
 
@@ -246,7 +245,7 @@ class TabPFN_CVCF(CVCFFilter):
                 )
             )
 
-        fold_confidence_matrix_ = fold_confidence_matrix if has_confidence else None
+        fold_confidence_matrix_ = fold_confidence_matrix
         wrong_votes = (fold_pred_matrix != y_idx[None, :]).sum(axis=0).astype(int)
         noisy_mask = self._flag_by_votes(wrong_votes, n_models=n_splits)
         keep_mask = ~noisy_mask
@@ -279,17 +278,35 @@ class TabPFN_CVCF(CVCFFilter):
             vote_entropy[sample_idx] = float(-(probs[mask] * np.log(probs[mask])).sum() / np.log(len(self.classes_))) if len(self.classes_) > 1 else 0.0
 
         committee_pred = self.classes_[committee_pred_idx]
-        committee_confidence = committee_majority_votes / float(n_splits)
+        sample_range = np.arange(n_samples)
+        support = np.zeros((n_samples, len(self.classes_)), dtype=float)
+        for fold_idx in range(n_splits):
+            np.add.at(support, (sample_range, fold_pred_matrix[fold_idx]), fold_confidence_matrix[fold_idx])
+
+        total_conf = np.sum(fold_confidence_matrix, axis=0)
+        support = np.divide(support, total_conf[:, None], out=np.zeros_like(support), where=total_conf[:, None] > 0.0)
+        zero_conf_mask = total_conf <= 0.0
+        if np.any(zero_conf_mask):
+            support[zero_conf_mask] = 1.0 / float(len(self.classes_))
+
+        committee_confidence = support[np.arange(n_samples), committee_pred_idx]
         committee_noise_score = 1.0 - committee_confidence
+        masked_support = support.copy()
+        masked_support[np.arange(n_samples), y_idx] = -np.inf
+        alt_support = np.max(masked_support, axis=1)
+        alt_support[~np.isfinite(alt_support)] = 0.0
+        noise_score = (1.0 - support[np.arange(n_samples), y_idx]) * np.sqrt(alt_support)
 
         self.fold_history_ = fold_history
         self.fold_pred_matrix_ = fold_pred_matrix
         self.fold_confidence_matrix_ = fold_confidence_matrix_
         self.vote_counts_ = vote_counts
+        self.support_ = support
         self.committee_pred_idx_ = committee_pred_idx
         self.committee_pred_ = committee_pred
         self.committee_confidence_ = committee_confidence
         self.committee_noise_score_ = committee_noise_score
+        self.noise_score_ = noise_score
         self.committee_vote_margin_ = vote_margin
         self.committee_vote_entropy_ = vote_entropy
         self.wrong_votes_ = wrong_votes
@@ -301,9 +318,30 @@ class TabPFN_CVCF(CVCFFilter):
             keep_mask=keep_mask,
             noisy_fraction=float(noisy_mask.mean()),
             fold_preds=self.classes_[fold_pred_matrix],
+            fold_confidence=fold_confidence_matrix,
             disagree_count=wrong_votes,
             noisy_votes=noisy_mask.astype(int),
             n_models=int(n_splits),
+            support=support,
+            committee_pred_idx=committee_pred_idx,
+            committee_pred=committee_pred,
+            committee_confidence=committee_confidence,
+            noise_score=noise_score,
+        )
+
+        attach_detection_report(
+            self,
+            noisy_mask,
+            noise_score=noise_score,
+            observed_labels=y,
+            predicted_labels=committee_pred,
+            committee_confidence=committee_confidence,
+            committee_noise_score=committee_noise_score,
+            support=support,
+            vote_margin=vote_margin,
+            vote_entropy=vote_entropy,
+            fold_preds=self.result_.fold_preds,
+            wrong_votes=wrong_votes,
         )
 
         self.keep_mask_ = keep_mask
@@ -315,10 +353,7 @@ class TabPFN_CVCF(CVCFFilter):
         """Fit the filter and return the filtered data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-        raise ValueError("action='relabel' is not implemented yet.")
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self):
         """Return a dictionary with the main fit diagnostics."""
@@ -333,11 +368,18 @@ class TabPFN_CVCF(CVCFFilter):
             "threshold": float(self.threshold) if self.vote_rule == "threshold" else None,
             "action": self.action,
             "agreement_mean": float(np.mean(self.committee_confidence_)),
-            "noise_score_mean": float(np.mean(self.committee_noise_score_)),
+            "support_mean": float(np.mean(self.support_)),
+            "noise_score_mean": float(np.mean(self.noise_score_)),
+            "committee_noise_score_mean": float(np.mean(self.committee_noise_score_)),
             "vote_margin_mean": float(np.mean(self.committee_vote_margin_)),
             "vote_entropy_mean": float(np.mean(self.committee_vote_entropy_)),
             "tabpfn_params": dict(self.tabpfn_params),
         }
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)
 
     def get_fold_history(self):
         """Return the stored per-fold diagnostics."""
@@ -506,7 +548,7 @@ class TabPFN_CVCF(CVCFFilter):
                     committee_pred_idx=committee_idx,
                     committee_pred=self._label_at(committee_idx),
                     confidence=float(self.committee_confidence_[sample_idx]),
-                    noise_score=float(self.committee_noise_score_[sample_idx]),
+                    noise_score=float(self.noise_score_[sample_idx]),
                     vote_margin=float(self.committee_vote_margin_[sample_idx]),
                     vote_entropy=float(self.committee_vote_entropy_[sample_idx]),
                     is_noisy=bool(self.noisy_mask_[sample_idx]),

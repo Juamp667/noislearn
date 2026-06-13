@@ -10,6 +10,8 @@ from sklearn.base import BaseEstimator
 from sklearn.neighbors import NearestNeighbors
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 @dataclass
 class NCNEditFilterResult:
@@ -47,8 +49,8 @@ class NCNEdit(BaseEstimator):
         Distance metric used by :class:`sklearn.neighbors.NearestNeighbors`.
     p : int, default=2
         Minkowski power parameter, only used when ``metric="minkowski"``.
-    action : {"remove", "relabel"}, default="remove"
-        Whether to drop noisy samples or replace their labels with the NCN vote.
+    action : {"remove", "detect"}, default="remove"
+        Whether to drop noisy samples or only detect them.
     n_jobs : int or None, default=None
         Parallelism forwarded to the nearest-neighbor search.
     candidate_strategy : {"full", "expansive"}, default="expansive"
@@ -71,6 +73,16 @@ class NCNEdit(BaseEstimator):
     def _majority_vote(labels_1d: np.ndarray):
         vals, cnts = np.unique(labels_1d, return_counts=True)
         return vals[np.argmax(cnts)]
+
+    @staticmethod
+    def _alternative_majority_fraction(labels_1d: np.ndarray, self_label):
+        if labels_1d.size == 0:
+            return 0.0
+        alt_labels = labels_1d[labels_1d != self_label]
+        if alt_labels.size == 0:
+            return 0.0
+        _, cnts = np.unique(alt_labels, return_counts=True)
+        return float(np.max(cnts) / float(labels_1d.size))
 
     @staticmethod
     def _centroid(points: np.ndarray):
@@ -130,8 +142,7 @@ class NCNEdit(BaseEstimator):
             raise ValueError(f"Need n_samples > n_neighbors. Got n_samples={n}, n_neighbors={k}.")
         if self.candidate_strategy not in {"full", "expansive"}:
             raise ValueError("candidate_strategy must be 'full' or 'expansive'")
-        if self.action not in {"remove", "relabel"}:
-            raise ValueError("action must be 'remove' or 'relabel'")
+        validate_action(self.action)
 
         # Compute the closest instances to each and every one of them once.
         nn = NearestNeighbors(
@@ -147,6 +158,8 @@ class NCNEdit(BaseEstimator):
         ncn_pred = np.empty(n, dtype=object)
         disagree_count = np.empty(n, dtype=int)
         neighbor_count_used = np.empty(n, dtype=int)
+        neighborhood_labels_used = np.empty(n, dtype=object)
+        neighborhood_alternative_majority_fraction = np.empty(n, dtype=float)
 
         expansive = self.candidate_strategy == "expansive"
         candidate_sizes = self._expansive_candidate_sizes(n, k) if expansive else None
@@ -157,6 +170,8 @@ class NCNEdit(BaseEstimator):
                 current_pred = np.empty(n, dtype=object)
                 current_disagree = np.empty(n, dtype=int)
                 current_neighbor_count_used = np.empty(n, dtype=int)
+                current_neighborhood_labels_used = np.empty(n, dtype=object)
+                current_neighborhood_alternative_majority_fraction = np.empty(n, dtype=float)
 
                 # For each instance
                 for i in range(n):
@@ -170,10 +185,14 @@ class NCNEdit(BaseEstimator):
                     # Store amount of disagreements
                     current_disagree[i] = int(np.sum(neigh_labels != y[i]))
                     current_neighbor_count_used[i] = int(len(neigh_idx))
+                    current_neighborhood_labels_used[i] = np.asarray(neigh_labels, dtype=object)
+                    current_neighborhood_alternative_majority_fraction[i] = self._alternative_majority_fraction(neigh_labels, y[i])
 
                 ncn_pred = current_pred
                 disagree_count = current_disagree
                 neighbor_count_used = current_neighbor_count_used
+                neighborhood_labels_used = current_neighborhood_labels_used
+                neighborhood_alternative_majority_fraction = current_neighborhood_alternative_majority_fraction
 
                 if prev_pred is not None and np.array_equal(current_pred, prev_pred):
                     break
@@ -192,6 +211,8 @@ class NCNEdit(BaseEstimator):
                 # Store amount of disagreements
                 disagree_count[i] = int(np.sum(neigh_labels != y[i]))
                 neighbor_count_used[i] = int(len(neigh_idx))
+                neighborhood_labels_used[i] = np.asarray(neigh_labels, dtype=object)
+                neighborhood_alternative_majority_fraction[i] = self._alternative_majority_fraction(neigh_labels, y[i])
 
         # Compute the masks with filtered samples  
         noisy_mask = (ncn_pred != y)
@@ -204,23 +225,29 @@ class NCNEdit(BaseEstimator):
             disagree_count=disagree_count,
             neighbor_count_used=neighbor_count_used,
         )
+        self.neighborhood_labels_used_ = neighborhood_labels_used
+        self.neighborhood_alternative_majority_fraction_ = neighborhood_alternative_majority_fraction
+        noise_score = (disagree_count / np.maximum(neighbor_count_used, 1)) * np.sqrt(neighborhood_alternative_majority_fraction)
+        attach_detection_report(
+            self,
+            noisy_mask,
+            noise_score=noise_score,
+            observed_labels=y,
+            predicted_labels=ncn_pred,
+            disagree_count=disagree_count,
+            neighbor_count_used=neighbor_count_used,
+            neighborhood_labels_used=neighborhood_labels_used,
+            neighborhood_alternative_majority_fraction=neighborhood_alternative_majority_fraction,
+        )
         self.X_ = X
         self.y_ = y
         return self
 
     def fit_resample(self, X, y):
-        """Fit the filter and return the filtered or relabelled data."""
+        """Fit the filter and return the filtered or detected data."""
 
         self.fit(X, y)
-
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-
-        y_new = np.asarray(self.y_).copy()
-        noisy_idx = np.where(~self.result_.keep_mask)[0]
-        y_new[noisy_idx] = self.result_.ncn_pred[noisy_idx]
-        return self.X_, y_new
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
@@ -238,3 +265,8 @@ class NCNEdit(BaseEstimator):
             "p": int(self.p) if self.metric == "minkowski" else None,
             "action": self.action,
         }
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)

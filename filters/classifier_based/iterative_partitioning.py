@@ -11,6 +11,8 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 # Default C4.5-like tree used by the iterative partitioning filter.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
@@ -51,8 +53,8 @@ class IterativePartitioningFilter(BaseEstimator):
         Number of stratified partitions built at each iteration.
     vote_rule : {"majority", "consensus"}, default="majority"
         Rule used to flag a sample as noisy from the partition disagreements.
-    action : {"remove", "relabel"}, default="remove"
-        Whether noisy samples are dropped or relabelled.
+    action : {"remove", "detect"}, default="remove"
+        Whether noisy samples are dropped or only detected.
     p_stop : float, default=0.01
         Patience threshold expressed as a fraction of the original dataset.
     k_patience : int, default=3
@@ -64,7 +66,7 @@ class IterativePartitioningFilter(BaseEstimator):
 
     Notes
     -----
-    When ``action="relabel"``, the majority vote of the partition models is used as the new label.
+    Relabel is not implemented yet.
     """
 
     def __init__(self, estimator=c45_like, n_partitions: int = 10, vote_rule: str = "majority", action: str = "remove", p_stop: float = 0.01, k_patience: int = 3, max_iter: int = 20, random_state: int = 33):
@@ -90,6 +92,7 @@ class IterativePartitioningFilter(BaseEstimator):
         X, y = check_X_y(X, y, accept_sparse=True)
         X = np.asarray(X)
         y = np.asarray(y)
+        validate_action(self.action)
         n0 = X.shape[0]
         orig_idx = np.arange(n0)
         alive = np.ones(n0, dtype=bool)
@@ -112,12 +115,6 @@ class IterativePartitioningFilter(BaseEstimator):
                 model.fit(X_E[part_idx], y_E[part_idx])
                 preds[m] = model.predict(X_E)
             disagree_counts = (preds != y_E[None, :]).sum(axis=0).astype(int)
-            maj = None
-            if self.action == "relabel":
-                maj = np.empty(nE, dtype=object)
-                for j in range(nE):
-                    vals, cnts = np.unique(preds[:, j], return_counts=True)
-                    maj[j] = vals[np.argmax(cnts)]
             noisy_local = self._flag_by_votes(disagree_counts, self.n_partitions)
             noisy_votes_global[E_idx] = disagree_counts
             n_flagged = int(noisy_local.sum())
@@ -126,29 +123,33 @@ class IterativePartitioningFilter(BaseEstimator):
             history.append(IPFIterationInfo(it, nE, n_flagged, frac_flagged, self.p_stop, self.vote_rule))
             if n_flagged == 0:
                 break
-            if self.action == "remove":
-                alive[E_idx[noisy_local]] = False
-            elif self.action == "relabel":
-                flagged_orig = E_idx[noisy_local]
-                y_out[flagged_orig] = maj[noisy_local]
-            else:
-                raise ValueError("action must be 'remove' or 'relabel'")
+            alive[E_idx[noisy_local]] = False
             if patience_counter >= self.k_patience:
                 break
 
-        self.result_ = IterativePartitioningFilterResult(keep_mask=alive.copy(), noisy_fraction=float((~alive).mean()) if self.action == "remove" else float((history[-1].n_flagged / n0) if history else 0.0), noisy_votes=noisy_votes_global, n_models=int(self.n_partitions), n_iters=int(len(history)), history=history)
+        self.result_ = IterativePartitioningFilterResult(keep_mask=alive.copy(), noisy_fraction=float((~alive).mean()), noisy_votes=noisy_votes_global, n_models=int(self.n_partitions), n_iters=int(len(history)), history=history)
         self.X_ = X
         self.y_ = y_out
+        # noise_score is not implemented yet for IterativePartitioningFilter.
+        attach_detection_report(
+            self,
+            ~alive,
+            observed_labels=y,
+            predicted_labels=None,
+            noisy_votes=noisy_votes_global,
+            history=history,
+            vote_rule=self.vote_rule,
+            p_stop=float(self.p_stop),
+            k_patience=int(self.k_patience),
+            max_iter=int(self.max_iter),
+        )
         return self
 
     def fit_resample(self, X, y):
-        """Fit the filter and return the filtered or relabelled data."""
+        """Fit the filter and return the filtered or detected data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-        return self.X_, self.y_
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
@@ -156,3 +157,8 @@ class IterativePartitioningFilter(BaseEstimator):
         r = self.result_
         last = r.history[-1] if r.history else None
         return {"n_samples": int(self.X_.shape[0]), "n_models_per_iter": int(r.n_models), "n_iters": int(r.n_iters), "vote_rule": self.vote_rule, "action": self.action, "fraction_removed_or_flagged": float(r.noisy_fraction), "last_iter_flagged": int(last.n_flagged) if last else 0, "last_iter_frac_flagged": float(last.frac_flagged) if last else 0.0, "p_stop": float(self.p_stop), "k_patience": int(self.k_patience), "max_iter": int(self.max_iter)}
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)

@@ -10,6 +10,8 @@ from sklearn.base import BaseEstimator
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 @dataclass
 class MultiEditFilterResult:
@@ -28,7 +30,7 @@ class MultiEditFilterResult:
     n_blocks : int
         Number of stratified blocks used per iteration.
     nn_pred : ndarray
-        Block-wise nearest-neighbor prediction used for relabeling.
+        Block-wise nearest-neighbor prediction used for detection.
     """
 
     keep_mask: np.ndarray
@@ -52,8 +54,8 @@ class MultiEditFilter(BaseEstimator):
         Distance metric used by the internal KNN classifiers.
     p : int, default=2
         Minkowski power parameter, only used when ``metric="minkowski"``.
-    action : {"remove", "relabel"}, default="remove"
-        Whether to drop noisy samples or replace their labels with the block prediction.
+    action : {"remove", "detect"}, default="remove"
+        Whether to drop noisy samples or only detect them.
     random_state : int, default=33
         Seed used to shuffle the stratified blocks.
     n_jobs : int or None, default=None
@@ -129,8 +131,7 @@ class MultiEditFilter(BaseEstimator):
             raise ValueError("n_blocks must be >= 2")
         if n < b:
             raise ValueError(f"Need n_samples >= n_blocks. Got n_samples={n}, n_blocks={b}.")
-        if self.action not in {"remove", "relabel"}:
-            raise ValueError("action must be 'remove' or 'relabel'")
+        validate_action(self.action)
         if self.max_iter is not None:
             max_iter = int(self.max_iter)
             if max_iter < 1:
@@ -192,22 +193,25 @@ class MultiEditFilter(BaseEstimator):
             n_blocks=b,
             nn_pred=nn_pred,
         )
+        # noise_score is not implemented yet for MultiEdit.
+        attach_detection_report(
+            self,
+            ~keep_mask,
+            observed_labels=y,
+            predicted_labels=nn_pred,
+            n_iters=int(n_iters),
+            n_blocks=b,
+            removed_total=int((~keep_mask).sum()),
+        )
         self.X_ = X
         self.y_ = y
         return self
 
     def fit_resample(self, X, y):
-        """Fit the filter and return the filtered or relabelled data."""
+        """Fit the filter and return the filtered or detected data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-
-        y_new = np.asarray(self.y_).copy()
-        noisy_idx = np.where(~self.result_.keep_mask)[0]
-        y_new[noisy_idx] = self.result_.nn_pred[noisy_idx]
-        return self.X_, y_new
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
@@ -225,3 +229,8 @@ class MultiEditFilter(BaseEstimator):
             "p": int(self.p) if self.metric == "minkowski" else None,
             "action": self.action,
         }
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)

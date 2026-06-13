@@ -29,6 +29,7 @@ from .classifier_based import (
     IPFIterationInfo,
     IterativePartitioningFilter,
     IterativePartitioningFilterResult,
+    TABPFNClassificationFilter,
     c45_like,
 )
 

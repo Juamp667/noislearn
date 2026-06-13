@@ -254,7 +254,7 @@ class CNCNOSCleaner(BaseEstimator):
                         ClassificationFilter(
                             estimator=knn,
                             cv=cv_eff,
-                            action="relabel",
+                            action="detect",
                             random_state=iter_rs,
                         ),
                     ),

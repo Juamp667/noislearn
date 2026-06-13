@@ -10,6 +10,8 @@ from sklearn.base import BaseEstimator
 from sklearn.neighbors import NearestNeighbors
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 @dataclass
 class ENNProbFilterResult:
@@ -31,6 +33,8 @@ class ENNProbFilterResult:
         Number of neighbors actually used for each sample.
     kth_distance : ndarray
         Distance to the kth neighbor used to define the neighborhood.
+    noise_score : ndarray
+        Product of the two noise factors.
     """
 
     keep_mask: np.ndarray
@@ -40,6 +44,7 @@ class ENNProbFilterResult:
     class_probabilities: np.ndarray
     neighbor_count_used: np.ndarray
     kth_distance: np.ndarray
+    noise_score: np.ndarray
 
 
 class ENNProbFilter(BaseEstimator):
@@ -60,8 +65,8 @@ class ENNProbFilter(BaseEstimator):
         Minkowski power parameter, only used when ``metric="minkowski"``.
     tie_eps : float, default=1e-12
         Tolerance used to include neighbors tied at the kth distance.
-    action : str, default="remove"
-        Removal is the only supported action in the current implementation.
+    action : {"remove", "detect"}, default="remove"
+        Whether to drop noisy samples or only detect them.
     n_jobs : int or None, default=None
         Parallelism forwarded to the nearest-neighbor search.
 
@@ -111,12 +116,11 @@ class ENNProbFilter(BaseEstimator):
             raise ValueError(f"Need n_samples > n_neighbors. Got n_samples={n}, n_neighbors={k}.")
         if self.mode not in {"prob", "th"}:
             raise ValueError("mode must be 'prob' or 'th'")
-        if self.action != "remove":
-            raise ValueError("action must be 'remove'")
+        validate_action(self.action)
         if not (0.0 <= float(self.threshold) <= 1.0):
             raise ValueError("threshold must be in [0, 1]")
 
-        classes = np.unique(y)
+        classes, y_idx = np.unique(y, return_inverse=True)
         n_query = k + 1 # The "+1" is due to the fact that NearestNeighbors returns the reciprocal-instance-distance (which is zero)
         # Compute the nn to each instance (as well as the corresponding distances)
         nn = NearestNeighbors(n_neighbors=n_query, metric=self.metric, p=self.p if self.metric == "minkowski" else None, n_jobs=self.n_jobs)
@@ -159,8 +163,27 @@ class ENNProbFilter(BaseEstimator):
             noisy_mask = noisy_mask | (max_prob < float(self.threshold))
         keep_mask = ~noisy_mask
 
+        # Compute the filter's noise_score
+        p_true = class_probabilities[np.arange(n), y_idx]
+        masked = class_probabilities.copy()
+        masked[np.arange(n), y_idx] = -np.inf   
+        p_alt = np.max(masked, axis=1)
+        p_alt[~np.isfinite(p_alt)] = 0.0
+        noise_score = (1.0 - p_true) * np.sqrt(p_alt)
 
-        self.result_ = ENNProbFilterResult(keep_mask=keep_mask, noisy_fraction=float(noisy_mask.mean()), nn_pred=nn_pred, max_prob=max_prob, class_probabilities=class_probabilities, neighbor_count_used=neighbor_count_used, kth_distance=kth_distance)
+        self.result_ = ENNProbFilterResult(keep_mask=keep_mask, noisy_fraction=float(noisy_mask.mean()), nn_pred=nn_pred, max_prob=max_prob, class_probabilities=class_probabilities, neighbor_count_used=neighbor_count_used, kth_distance=kth_distance, noise_score=noise_score)
+        self.noise_score_ = noise_score
+        attach_detection_report(
+            self,
+            noisy_mask,
+            noise_score=noise_score,
+            observed_labels=y,
+            predicted_labels=nn_pred,
+            max_prob=max_prob,
+            class_probabilities=class_probabilities,
+            neighbor_count_used=neighbor_count_used,
+            kth_distance=kth_distance,
+        )
         self.X_ = X
         self.y_ = y
         self.classes_ = classes
@@ -170,14 +193,18 @@ class ENNProbFilter(BaseEstimator):
         """Fit the filter and return the filtered data."""
 
         self.fit(X, y)
-        km = self.result_.keep_mask
-        return self.X_[km], self.y_[km]
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
 
         r = self.result_
         return {"n_samples": int(self.X_.shape[0]), "mode": self.mode, "n_neighbors_k": int(self.n_neighbors), "threshold": float(self.threshold) if self.mode == "th" else None, "avg_neighbors_used": float(np.mean(r.neighbor_count_used)), "max_neighbors_used": int(np.max(r.neighbor_count_used)), "removed_or_flagged": int((~r.keep_mask).sum()), "fraction_flagged": float(r.noisy_fraction), "metric": self.metric, "p": int(self.p) if self.metric == "minkowski" else None, "tie_eps": float(self.tie_eps), "action": self.action}
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)
 
 
 # Backwards-friendly names.

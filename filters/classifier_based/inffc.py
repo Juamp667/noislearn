@@ -13,6 +13,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 # Default classifiers used to bootstrap the heterogeneous committee.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
@@ -57,8 +59,8 @@ class INFFCFilter(BaseEstimator):
         Rule used to flag a sample as noisy from the committee disagreements.
     threshold : float, default=0.5
         Minimum disagreement fraction required when ``decision_rule="threshold"``.
-    action : {"remove", "relabel"}, default="remove"
-        Whether noisy samples are dropped or relabelled.
+    action : {"remove", "detect"}, default="remove"
+        Whether noisy samples are dropped or only detected.
     max_iter : int, default=20
         Maximum number of cleaning iterations.
     max_removed_frac : float, default=0.5
@@ -68,7 +70,7 @@ class INFFCFilter(BaseEstimator):
 
     Notes
     -----
-    The current implementation only supports removal; ``action="relabel"`` raises an error.
+    Relabel is not implemented yet.
     """
 
     def __init__(self, estimators=None, cv: int = 10, decision_rule: str = "majority", threshold: float = 0.5, action: str = "remove", max_iter: int = 20, max_removed_frac: float = 0.5, random_state: int = 33):
@@ -110,8 +112,7 @@ class INFFCFilter(BaseEstimator):
             raise ValueError("cv must be >= 2")
         if n0 < self.cv:
             raise ValueError(f"Need n_samples >= cv. Got n_samples={n0}, cv={self.cv}.")
-        if self.action not in {"remove", "relabel"}:
-            raise ValueError("action must be 'remove' or 'relabel'")
+        validate_action(self.action)
         if not (0.0 <= float(self.max_removed_frac) <= 1.0):
             raise ValueError("max_removed_frac must be in [0, 1]")
 
@@ -163,10 +164,7 @@ class INFFCFilter(BaseEstimator):
                 break
             
             # Remove reamining instances flagged as noisy in this iteration
-            if self.action == "remove":
-                alive[E_idx[noisy_local]] = False
-            elif self.action == "relabel":
-                raise ValueError("action='relabel' is not implemented yet.")
+            alive[E_idx[noisy_local]] = False
 
             removed_frac = float((~alive).sum() / n0)   # Fraction (with respect to the initial training dataset) removed up to this iteration
             # Stop if a pct higher than `self.max_removed_frac` has been removed up to this iteration
@@ -186,16 +184,26 @@ class INFFCFilter(BaseEstimator):
         )
         self.X_ = X
         self.y_ = y_out
+        # noise_score is not implemented yet for INFFCFilter.
+        attach_detection_report(
+            self,
+            ~keep_mask,
+            observed_labels=y,
+            predicted_labels=None,
+            noisy_votes=noisy_votes_global,
+            history=history,
+            decision_rule=self.decision_rule,
+            cv=int(self.cv),
+            max_iter=int(self.max_iter),
+            max_removed_frac=float(self.max_removed_frac),
+        )
         return self
 
     def fit_resample(self, X, y):
-        """Fit the filter and return the filtered or relabelled data."""
+        """Fit the filter and return the filtered or detected data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-        return self.X_, self.y_
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
@@ -203,3 +211,8 @@ class INFFCFilter(BaseEstimator):
         r = self.result_
         last = r.history[-1] if r.history else None
         return {"n_samples": int(self.X_.shape[0]), "n_models": int(r.n_models), "n_iters": int(r.n_iters), "decision_rule": self.decision_rule, "action": self.action, "fraction_removed_or_flagged": float(r.noisy_fraction), "last_iter_flagged": int(last.n_flagged) if last else 0, "last_iter_frac_flagged": float(last.frac_flagged) if last else 0.0, "cv": int(self.cv), "threshold": float(self.threshold) if self.decision_rule == "threshold" else None, "max_iter": int(self.max_iter), "max_removed_frac": float(self.max_removed_frac)}
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)

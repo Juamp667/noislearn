@@ -14,6 +14,7 @@ from sklearn.utils.validation import check_is_fitted, check_X_y
 from tabpfn import TabPFNClassifier
 
 from ..classification import ClassificationFilter, ClassificationFilterResult
+from ..._detection import attach_detection_report, resample_by_action, validate_action
 
 
 @dataclass
@@ -103,9 +104,8 @@ class TabPFN_CF(ClassificationFilter):
         Number of stratified folds used to generate out-of-fold predictions.
     random_state : int, default=33
         Seed used by the stratified splitter and forwarded to TabPFN.
-    action : {"remove", "relabel"}, default="remove"
-        Whether noisy samples are dropped or relabelled. The current
-        ``fit_resample`` implementation only supports removal.
+    action : {"remove", "detect"}, default="remove"
+        Whether noisy samples are dropped or only detected. Relabel is not implemented yet.
     tabpfn_params : dict or None, default=None
         Keyword arguments forwarded to :class:`tabpfn.TabPFNClassifier`.
 
@@ -143,8 +143,7 @@ class TabPFN_CF(ClassificationFilter):
             raise ValueError("cv must be >= 2")
         if n_samples < self.cv:
             raise ValueError(f"Need n_samples >= cv. Got n_samples={n_samples}, cv={self.cv}.")
-        if self.action not in {"remove", "relabel"}:
-            raise ValueError("action must be 'remove' or 'relabel'")
+        validate_action(self.action)
 
         self.n_features_in_ = int(n_features)
         if feature_names is None:
@@ -160,6 +159,7 @@ class TabPFN_CF(ClassificationFilter):
         oof_fold_idx = np.full(n_samples, -1, dtype=int)
         oof_confidence = np.full(n_samples, np.nan, dtype=float)
         oof_proba = None
+        has_oof_proba = True
         # Initilize a history for each fold
         fold_history = []
 
@@ -180,11 +180,18 @@ class TabPFN_CF(ClassificationFilter):
                 if fold_proba.ndim == 2 and fold_proba.shape[0] == test_idx.shape[0]:
                     if oof_proba is None:
                         oof_proba = np.full((n_samples, fold_proba.shape[1]), np.nan, dtype=float)
-                    # Store probabilities
-                    oof_proba[test_idx] = fold_proba
-                    # Store probability associated to predicted label
-                    fold_confidence = np.take_along_axis(fold_proba, fold_pred_idx[:, None], axis=1).ravel()
-                    oof_confidence[test_idx] = fold_confidence
+                    if fold_proba.shape[1] != self.classes_.shape[0]:
+                        has_oof_proba = False
+                    else:
+                        # Store probabilities
+                        oof_proba[test_idx] = fold_proba
+                        # Store probability associated to predicted label
+                        fold_confidence = np.take_along_axis(fold_proba, fold_pred_idx[:, None], axis=1).ravel()
+                        oof_confidence[test_idx] = fold_confidence
+                else:
+                    has_oof_proba = False
+            else:
+                has_oof_proba = False
 
             oof_pred_idx[test_idx] = fold_pred_idx
             oof_fold_idx[test_idx] = fold_idx
@@ -212,11 +219,22 @@ class TabPFN_CF(ClassificationFilter):
 
         oof_pred = self.classes_[oof_pred_idx]
         noisy_mask = oof_pred_idx != y_idx
+        noise_score = None
+        if has_oof_proba and oof_proba is not None and np.isfinite(oof_proba).all():
+            p_true = oof_proba[np.arange(n_samples), y_idx]
+            masked = oof_proba.copy()
+            masked[np.arange(n_samples), y_idx] = -np.inf
+            p_alt = np.max(masked, axis=1)
+            p_alt[~np.isfinite(p_alt)] = 0.0
+            noise_score = (1.0 - p_true) * np.sqrt(p_alt)
+        else:
+            oof_proba = None
 
         self.oof_pred_idx_ = oof_pred_idx
         self.oof_pred_ = oof_pred
         self.oof_proba_ = oof_proba
         self.oof_confidence_ = oof_confidence
+        self.noise_score_ = noise_score
         self.oof_fold_idx_ = oof_fold_idx
         self.noisy_mask_ = noisy_mask
         self.noisy_indices_ = np.flatnonzero(noisy_mask)
@@ -229,6 +247,17 @@ class TabPFN_CF(ClassificationFilter):
             oof_pred=oof_pred,
         )
 
+        attach_detection_report(
+            self,
+            noisy_mask,
+            noise_score=noise_score,
+            observed_labels=y,
+            predicted_labels=oof_pred,
+            confidence=oof_confidence,
+            oof_fold_idx=oof_fold_idx,
+            oof_proba=oof_proba,
+        )
+
         self.X_ = X
         self.y_ = y
         return self
@@ -237,15 +266,7 @@ class TabPFN_CF(ClassificationFilter):
         """Fit the filter and return the filtered data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-        # if self.action == "relabel":
-        #     y_new = np.asarray(self.y_).copy()
-        #     noisy_idx = np.where(~self.result_.keep_mask)[0]
-        #     y_new[noisy_idx] = self.result_.oof_pred[noisy_idx]
-        #     return self.X_, y_new
-        raise ValueError("action must be 'remove'")#
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self):
         """Return a dictionary with the main fit diagnostics."""
@@ -260,6 +281,11 @@ class TabPFN_CF(ClassificationFilter):
             "cv": int(self.cv),
             "tabpfn_params": dict(self.tabpfn_params),
         }
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)
 
     def get_fold_history(self):
         """Return the stored per-fold diagnostics."""

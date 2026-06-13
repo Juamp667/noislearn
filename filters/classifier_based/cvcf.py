@@ -11,6 +11,8 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.validation import check_X_y
 
+from .._detection import attach_detection_report, resample_by_action, validate_action
+
 
 # Default C4.5-like tree used by the committee filter.
 c45_like = DecisionTreeClassifier(criterion="entropy", splitter="best", random_state=33)
@@ -23,9 +25,15 @@ class CVCFFilterResult:
     keep_mask: np.ndarray
     noisy_fraction: float
     fold_preds: np.ndarray
+    fold_confidence: np.ndarray
     disagree_count: np.ndarray
     noisy_votes: np.ndarray
-    n_opect
+    n_models: int
+    support: np.ndarray
+    committee_pred_idx: np.ndarray
+    committee_pred: np.ndarray
+    committee_confidence: np.ndarray
+    noise_score: np.ndarray
 
 
 class CVCFFilter(BaseEstimator):
@@ -41,14 +49,14 @@ class CVCFFilter(BaseEstimator):
         Rule used to flag samples as noisy from the fold disagreements.
     threshold : float, default=0.5
         Minimum fraction of disagreeing folds required when ``vote_rule="threshold"``.
-    action : {"remove", "relabel"}, default="remove"
-        Whether noisy samples are dropped or relabelled.
+    action : {"remove", "detect"}, default="remove"
+        Whether noisy samples are dropped or only detected.
     random_state : int, default=33
         Seed used by the stratified splitter.
 
     Notes
     -----
-    The current implementation supports removal only; ``action="relabel"`` raises an error.
+    Relabel is not implemented yet.
     """
 
     def __init__(self, estimator=c45_like, cv: int = 10, vote_rule: str = "threshold", threshold: float = 0.5, action: str = "remove", random_state: int = 33):
@@ -82,32 +90,81 @@ class CVCFFilter(BaseEstimator):
             raise ValueError("cv must be >= 2")
         if n < self.cv:
             raise ValueError(f"Need n_samples >= cv. Got n_samples={n}, cv={self.cv}.")
-        if self.action not in {"remove", "relabel"}:
-            raise ValueError("action must be 'remove' or 'relabel'")
+        validate_action(self.action)
 
         skf = StratifiedKFold(n_splits=self.cv, shuffle=True, random_state=self.random_state)
-        fold_preds = np.empty((self.cv, n), dtype=int)
+        fold_pred_idx = np.empty((self.cv, n), dtype=int)
+        fold_confidence = np.ones((self.cv, n), dtype=float)
 
         for fold_idx, (train_idx, _) in enumerate(skf.split(X, y_idx)):
-            # Train a model on the train_fold
             model = clone(self.estimator)
             model.fit(X[train_idx], y_idx[train_idx])
-            # Predict in all the training set
-            fold_preds[fold_idx] = model.predict(X)
+            pred_idx = np.asarray(model.predict(X), dtype=int)
+            fold_pred_idx[fold_idx] = pred_idx
+
+            if hasattr(model, "predict_proba"):
+                proba = np.asarray(model.predict_proba(X), dtype=float)
+                if proba.ndim == 2 and proba.shape[0] == n and proba.shape[1] == self.classes_.shape[0]:
+                    fold_confidence[fold_idx] = np.take_along_axis(proba, pred_idx[:, None], axis=1).ravel()
 
         # Compute the agreement between models
-        disagree_count = (fold_preds != y_idx[None, :]).sum(axis=0).astype(int)
+        disagree_count = (fold_pred_idx != y_idx[None, :]).sum(axis=0).astype(int)
         # Flag instances as noisy or not
         noisy_mask = self._flag_by_votes(disagree_count, n_models=self.cv)
         keep_mask = ~noisy_mask
 
+        total_conf = np.sum(fold_confidence, axis=0)
+        support = np.zeros((n, self.classes_.shape[0]), dtype=float)
+        sample_range = np.arange(n)
+        for fold_idx in range(self.cv):
+            np.add.at(support, (sample_range, fold_pred_idx[fold_idx]), fold_confidence[fold_idx])
+
+        support = np.divide(support, total_conf[:, None], out=np.zeros_like(support), where=total_conf[:, None] > 0.0)
+        zero_conf_mask = total_conf <= 0.0
+        if np.any(zero_conf_mask):
+            support[zero_conf_mask] = 1.0 / float(self.classes_.shape[0])
+
+        committee_pred_idx = np.argmax(support, axis=1)
+        committee_pred = self.classes_[committee_pred_idx]
+        committee_confidence = support[np.arange(n), committee_pred_idx]
+        committee_noise_score = 1.0 - committee_confidence
+        masked_support = support.copy()
+        masked_support[np.arange(n), y_idx] = -np.inf
+        alt_support = np.max(masked_support, axis=1)
+        alt_support[~np.isfinite(alt_support)] = 0.0
+        noise_score = (1.0 - support[np.arange(n), y_idx]) * np.sqrt(alt_support)
+
         self.result_ = CVCFFilterResult(
             keep_mask=keep_mask,
             noisy_fraction=float(noisy_mask.mean()),
-            fold_preds=self.classes_[fold_preds],
+            fold_preds=self.classes_[fold_pred_idx],
+            fold_confidence=fold_confidence,
             disagree_count=disagree_count,
             noisy_votes=noisy_mask.astype(int),
             n_models=int(self.cv),
+            support=support,
+            committee_pred_idx=committee_pred_idx,
+            committee_pred=committee_pred,
+            committee_confidence=committee_confidence,
+            noise_score=noise_score,
+        )
+        self.fold_confidence_ = fold_confidence
+        self.support_ = support
+        self.noise_score_ = noise_score
+        self.committee_pred_idx_ = committee_pred_idx
+        self.committee_pred_ = committee_pred
+        self.committee_confidence_ = committee_confidence
+        self.committee_noise_score_ = committee_noise_score
+        attach_detection_report(
+            self,
+            noisy_mask,
+            noise_score=noise_score,
+            observed_labels=y,
+            predicted_labels=committee_pred,
+            fold_preds=self.result_.fold_preds,
+            fold_confidence=fold_confidence,
+            disagree_count=disagree_count,
+            vote_fraction=disagree_count / float(self.cv),
         )
         self.X_ = X
         self.y_ = y
@@ -117,12 +174,7 @@ class CVCFFilter(BaseEstimator):
         """Fit the filter and return the filtered data."""
 
         self.fit(X, y)
-        if self.action == "remove":
-            km = self.result_.keep_mask
-            return self.X_[km], self.y_[km]
-
-        # Elif "relabel"
-        raise Exception("Relabeling has no been implemented yet.")
+        return resample_by_action(self.X_, self.y_, self.action, self.result_.keep_mask)
 
     def get_filter_report(self) -> Dict[str, Any]:
         """Return a dictionary with the main fit diagnostics."""
@@ -133,7 +185,14 @@ class CVCFFilter(BaseEstimator):
             "n_models": int(r.n_models),
             "removed_or_flagged": int((~r.keep_mask).sum()),
             "fraction_flagged": float(r.noisy_fraction),
+            "support_mean": float(np.mean(self.support_)),
+            "noise_score_mean": float(np.mean(self.noise_score_)),
             "vote_rule": self.vote_rule,
             "threshold": float(self.threshold) if self.vote_rule == "threshold" else None,
             "action": self.action,
         }
+
+    def get_detection_report(self):
+        """Return the stored detection report."""
+
+        return dict(self.detection_report_)
