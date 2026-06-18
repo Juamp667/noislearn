@@ -7,7 +7,7 @@ These filters compare the observed labels against predictions obtained from one 
 - `ClassificationFilter` uses a single classifier and out-of-fold predictions.
 - `CVCFFilter` aggregates fold-wise committee votes.
 - `EnsembleFiltering` compares several estimators.
-- `INFFCFilter` iteratively fuses a heterogeneous committee.
+- `INFFC_old_wrong` iteratively fuses a heterogeneous committee.
 - `IterativePartitioningFilter` repeatedly partitions the data and checks agreement.
 
 ## ClassificationFilter
@@ -52,21 +52,21 @@ These filters compare the observed labels against predictions obtained from one 
       show_source: false
       heading_level: 3
 
-## INFFCFilter
+## INFFC_old_wrong
 
-::: filters.classifier_based.inffc.INFFCFilter
+::: filters.classifier_based.inffc_old_wrong.INFFC_old_wrong
     options:
       show_root_heading: false
       show_source: false
       heading_level: 3
 
-::: filters.classifier_based.inffc.INFFCFilterResult
+::: filters.classifier_based.inffc_old_wrong.INFFC_old_wrongFilterResult
     options:
       show_root_heading: false
       show_source: false
       heading_level: 3
 
-::: filters.classifier_based.inffc.INFFCIterationInfo
+::: filters.classifier_based.inffc_old_wrong.INFFC_old_wrongIterationInfo
     options:
       show_root_heading: false
       show_source: false

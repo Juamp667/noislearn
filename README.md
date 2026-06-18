@@ -14,7 +14,7 @@ Documentation site: `https://noislearn.org/`
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | Noise generation         | `URLFNoise`, `NARNoise`                                                                                                 |
 | Distance-based filters   | `AllKNN`, `TomekLinks`, `ENNFilter`, `ENNProbFilter` / `ENNTh`, `MultiEditFilter`, `NCNEdit`                            |
-| Classifier-based filters | `ClassificationFilter` (CF), `CVCFFilter`, `EnsembleFiltering` (EF), `INFFCFilter`, `IterativePartitioningFilter` (IPF) |
+| Classifier-based filters | `ClassificationFilter` (CF), `CVCFFilter`, `EnsembleFiltering` (EF), `INFFC_old_wrong`, `IterativePartitioningFilter` (IPF) |
 | TabPFN-based filters     | `TabPFN_CF`, `TabPFN_CVCF`, SHAP-based local explanation reports                                                        |
 | High-level cleaner       | `CNCNOSCleaner`                                                                                                         |
 | Evaluation tooling       | `noise_cv_eval.py`, `testFuncs.py`, notebooks for experiments and analysis                                              |
