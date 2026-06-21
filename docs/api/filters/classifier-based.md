@@ -6,6 +6,7 @@ These filters compare the observed labels against predictions obtained from one 
 
 - `ClassificationFilter` uses a single classifier and out-of-fold predictions.
 - `CVCFFilter` aggregates fold-wise committee votes.
+- `FilterEnsembleFilter` (FEF) combines several existing filters by vote and score.
 - `EnsembleFiltering` compares several estimators.
 - `INFFC_old_wrong` iteratively fuses a heterogeneous committee.
 - `IterativePartitioningFilter` repeatedly partitions the data and checks agreement.
@@ -47,6 +48,20 @@ These filters compare the observed labels against predictions obtained from one 
       heading_level: 3
 
 ::: filters.classifier_based.ensemble.EnsembleFilterResult
+    options:
+      show_root_heading: false
+      show_source: false
+      heading_level: 3
+
+## FilterEnsembleFilter
+
+::: filters.classifier_based.fef.FilterEnsembleFilter
+    options:
+      show_root_heading: false
+      show_source: false
+      heading_level: 3
+
+::: filters.classifier_based.fef.FilterEnsembleFilterResult
     options:
       show_root_heading: false
       show_source: false

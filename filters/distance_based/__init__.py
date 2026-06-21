@@ -4,10 +4,32 @@ try:
     from .aknn import AllKNN
 except ModuleNotFoundError:
     AllKNN = None
-from .enn import ENNFilter, ENNFilterResult
-from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
-from .multiedit import MultiEditFilter, MultiEditFilterResult
-from .ncnedit import NCNEdit, NCNEditFilterResult
+try:
+    from .enn import ENNFilter, ENNFilterResult
+except Exception:  # pragma: no cover - optional dependency fallback.
+    ENNFilter = None
+    ENNFilterResult = None
+
+try:
+    from .ennTh import ENNProb, ENNTh, ENNProbFilter, ENNProbFilterResult
+except Exception:  # pragma: no cover - optional dependency fallback.
+    ENNProb = None
+    ENNTh = None
+    ENNProbFilter = None
+    ENNProbFilterResult = None
+
+try:
+    from .multiedit import MultiEditFilter, MultiEditFilterResult
+except Exception:  # pragma: no cover - optional dependency fallback.
+    MultiEditFilter = None
+    MultiEditFilterResult = None
+
+try:
+    from .ncnedit import NCNEdit, NCNEditFilterResult
+except Exception:  # pragma: no cover - optional dependency fallback.
+    NCNEdit = None
+    NCNEditFilterResult = None
+
 try:
     from .tomeklinks import TomekLinks
 except ModuleNotFoundError:

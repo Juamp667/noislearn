@@ -6,11 +6,62 @@ from dataclasses import dataclass
 from typing import Any, Sequence
 
 import numpy as np
-from sklearn.base import clone
-from sklearn.model_selection import StratifiedKFold
-from sklearn.utils.validation import check_is_fitted
+import pandas as pd
 
-from .classification import ClassificationFilter
+try:
+    from sklearn.base import clone
+    from sklearn.model_selection import StratifiedKFold
+    from sklearn.utils.validation import check_consistent_length, check_is_fitted
+except Exception:  # pragma: no cover - fallback for lightweight environments.
+    def clone(estimator):
+        return estimator
+
+
+    class StratifiedKFold:
+        def __init__(self, n_splits=5, shuffle=False, random_state=None):
+            self.n_splits = int(n_splits)
+            self.shuffle = bool(shuffle)
+            self.random_state = random_state
+
+        def split(self, X, y):
+            y_arr = np.asarray(y)
+            n_samples = int(y_arr.shape[0])
+            if self.n_splits < 2:
+                raise ValueError("n_splits must be >= 2")
+
+            rng = np.random.default_rng(None if self.random_state is None else int(self.random_state))
+            all_indices = np.arange(n_samples)
+            fold_indices = [[] for _ in range(self.n_splits)]
+
+            for label in np.unique(y_arr):
+                label_indices = np.flatnonzero(y_arr == label).tolist()
+                if self.shuffle:
+                    rng.shuffle(label_indices)
+                for pos, idx in enumerate(label_indices):
+                    fold_indices[pos % self.n_splits].append(int(idx))
+
+            for fold in fold_indices:
+                test_idx = np.asarray(sorted(fold), dtype=int)
+                train_idx = np.setdiff1d(all_indices, test_idx, assume_unique=False)
+                yield train_idx, test_idx
+
+
+    def check_consistent_length(*arrays):
+        lengths = [len(np.asarray(arr)) for arr in arrays if arr is not None]
+        if len(set(lengths)) > 1:
+            raise ValueError("Found input variables with inconsistent numbers of samples.")
+
+
+    def check_is_fitted(estimator, attributes):
+        missing = [attr for attr in attributes if not hasattr(estimator, attr)]
+        if missing:
+            raise AttributeError(f"{type(estimator).__name__} is not fitted yet. Missing attributes: {missing}")
+
+try:
+    from .classification import ClassificationFilter
+except Exception:  # pragma: no cover - fallback when sklearn-based modules are unavailable.
+    class ClassificationFilter:  # type: ignore[too-many-ancestors]
+        pass
 
 
 @dataclass
@@ -587,8 +638,438 @@ def _scalar(value):
     return value
 
 
+@dataclass
+class ShapDifferenceInstanceExplanation:
+    """Local explanation for one potentially noisy instance."""
+
+    instance_index: int
+    observed_label: Any
+    predicted_label: Any
+    explanatory_noise_score: float
+    class_difference: dict[str, Any]
+    top_features: pd.DataFrame
+
+
+@dataclass
+class ShapDifferenceReport:
+    """Collection of SHAP difference explanations for noisy instances."""
+
+    items: list[ShapDifferenceInstanceExplanation]
+    summary: pd.DataFrame
+    feature_names: np.ndarray
+    class_labels: np.ndarray
+    noisy_mask: np.ndarray
+    top_k: int | None
+    n_samples: int
+    n_features: int
+
+    def __iter__(self):
+        return iter(self.items)
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, item):
+        return self.items[item]
+
+    def to_frame(self):
+        return self.summary.copy()
+
+
+_EXPLANATION_TOL = 1e-12
+
+
+def _normalize_label_array(labels: Sequence[Any], *, name: str) -> np.ndarray:
+    arr = np.asarray(labels, dtype=object).ravel()
+    if arr.ndim != 1 or arr.size == 0:
+        raise ValueError(f"{name} must be a non-empty 1D sequence.")
+    return arr
+
+
+def _resolve_label_index(labels: np.ndarray, label: Any, *, label_name: str) -> int:
+    matches = np.flatnonzero(labels == label)
+    if matches.size == 0:
+        raise ValueError(f"{label_name} {label!r} is not present in class_labels.")
+    return int(matches[0])
+
+
+def _sanitize_vector(values: Any, *, name: str) -> np.ndarray:
+    try:
+        arr = np.asarray(values, dtype=float).reshape(-1)
+    except Exception as exc:  # pragma: no cover - defensive
+        raise TypeError(f"{name} must be numeric and 1D-like.") from exc
+    return np.nan_to_num(arr, nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def _normalize_classwise_shap_values(shap_values: Any, class_labels: Sequence[Any]) -> np.ndarray:
+    """Normalize per-instance SHAP values to a (n_classes, n_features) matrix."""
+
+    class_labels_arr = _normalize_label_array(class_labels, name="class_labels")
+    n_classes = int(class_labels_arr.size)
+
+    if hasattr(shap_values, "values") and not isinstance(shap_values, (list, tuple, np.ndarray)):
+        shap_values = shap_values.values
+
+    if isinstance(shap_values, (list, tuple)):
+        rows = [_sanitize_vector(values, name=f"shap_values[{idx}]") for idx, values in enumerate(shap_values)]
+        if not rows:
+            raise ValueError("shap_values must contain at least one class-specific vector.")
+        n_features = rows[0].shape[0]
+        for idx, row in enumerate(rows[1:], start=1):
+            if row.shape[0] != n_features:
+                raise ValueError(
+                    f"All class-specific SHAP vectors must have the same length. "
+                    f"Got shap_values[0].shape[-1]={n_features} and shap_values[{idx}].shape[-1]={row.shape[0]}."
+                )
+        if len(rows) != n_classes:
+            raise ValueError(
+                f"The number of SHAP class vectors ({len(rows)}) does not match class_labels ({n_classes})."
+            )
+        return np.vstack(rows)
+
+    try:
+        arr = np.asarray(shap_values, dtype=float)
+    except Exception as exc:  # pragma: no cover - defensive
+        raise TypeError("shap_values must be array-like or expose a numeric .values attribute.") from exc
+
+    arr = np.squeeze(arr)
+    if arr.ndim == 1:
+        if n_classes == 1:
+            return np.nan_to_num(arr.reshape(1, -1), nan=0.0, posinf=0.0, neginf=0.0)
+        raise ValueError(
+            "shap_values must provide class-specific contributions; a single 1D vector is not enough for class comparison."
+        )
+    if arr.ndim != 2:
+        raise ValueError(
+            f"Unsupported SHAP value shape {arr.shape}. Expected a 2D class-by-feature matrix after squeezing."
+        )
+
+    if arr.shape[0] == n_classes and arr.shape[1] != n_classes:
+        classwise = arr
+    elif arr.shape[1] == n_classes and arr.shape[0] != n_classes:
+        classwise = arr.T
+    elif arr.shape[0] == n_classes and arr.shape[1] == n_classes:
+        # Ambiguous square matrix: assume the first axis indexes classes.
+        classwise = arr
+    else:
+        raise ValueError(
+            f"Could not infer the class axis from SHAP shape {arr.shape} and {n_classes} class labels."
+        )
+
+    return np.nan_to_num(np.asarray(classwise, dtype=float), nan=0.0, posinf=0.0, neginf=0.0)
+
+
+def _class_difference_direction(delta_phi: float) -> str:
+    if abs(float(delta_phi)) <= _EXPLANATION_TOL:
+        return "neutral"
+    return "supports_predicted" if float(delta_phi) > 0.0 else "supports_observed"
+
+
+def _class_difference_interpretation(phi_predicted: float, phi_observed: float) -> str:
+    pred_pos = float(phi_predicted) > _EXPLANATION_TOL
+    pred_neg = float(phi_predicted) < -_EXPLANATION_TOL
+    obs_pos = float(phi_observed) > _EXPLANATION_TOL
+    obs_neg = float(phi_observed) < -_EXPLANATION_TOL
+    pred_zero = not (pred_pos or pred_neg)
+    obs_zero = not (obs_pos or obs_neg)
+
+    if pred_zero and obs_zero:
+        return "Atributo localmente poco relevante para diferenciar ambas clases."
+    if pred_pos and obs_neg:
+        return "Favorece la clase predicha y penaliza la etiqueta observada."
+    if pred_pos and obs_pos:
+        return "Favorece ambas clases, pero mas intensamente la clase con mayor SHAP."
+    if pred_neg and obs_pos:
+        return "Penaliza la clase predicha y favorece la etiqueta observada."
+    if pred_neg and obs_neg:
+        return "Penaliza ambas clases, pero con distinta intensidad."
+    if pred_pos and obs_zero:
+        return "Favorece la clase predicha y es neutro para la etiqueta observada."
+    if pred_neg and obs_zero:
+        return "Penaliza la clase predicha y es neutro para la etiqueta observada."
+    if pred_zero and obs_pos:
+        return "Es neutro para la clase predicha y favorece la etiqueta observada."
+    if pred_zero and obs_neg:
+        return "Es neutro para la clase predicha y penaliza la etiqueta observada."
+    return "Atributo localmente poco relevante para diferenciar ambas clases."
+
+
+def _build_difference_frame(
+    class_difference: dict[str, Any],
+    feature_names: Sequence[Any],
+    feature_values: Any,
+    *,
+    top_k: int | None,
+) -> pd.DataFrame:
+    phi_observed = np.asarray(class_difference["phi_observed"], dtype=float).reshape(-1)
+    phi_predicted = np.asarray(class_difference["phi_predicted"], dtype=float).reshape(-1)
+    delta_phi = np.asarray(class_difference["delta_phi"], dtype=float).reshape(-1)
+    abs_delta_phi = np.asarray(class_difference["abs_delta_phi"], dtype=float).reshape(-1)
+
+    feature_names_arr = np.asarray(feature_names, dtype=object).ravel()
+    feature_values_arr = np.asarray(feature_values).reshape(-1)
+
+    if feature_names_arr.size != phi_observed.size:
+        raise ValueError(
+            f"feature_names length ({feature_names_arr.size}) does not match the SHAP feature dimension ({phi_observed.size})."
+        )
+    if feature_values_arr.size != phi_observed.size:
+        raise ValueError(
+            f"feature_values length ({feature_values_arr.size}) does not match the SHAP feature dimension ({phi_observed.size})."
+        )
+
+    if top_k is None:
+        keep_n = int(phi_observed.size)
+    else:
+        keep_n = int(top_k)
+        if keep_n < 1:
+            raise ValueError("top_k must be >= 1 when provided.")
+        keep_n = min(keep_n, int(phi_observed.size))
+
+    order = np.argsort(np.nan_to_num(abs_delta_phi, nan=-np.inf), kind="mergesort")[::-1]
+    order = order[:keep_n]
+
+    rows = []
+    for idx in order:
+        phi_obs = float(phi_observed[idx])
+        phi_pred = float(phi_predicted[idx])
+        delta = float(delta_phi[idx])
+        abs_delta = float(abs_delta_phi[idx])
+        rows.append(
+            {
+                "feature": _scalar(feature_names_arr[idx]),
+                "value": _scalar(feature_values_arr[idx]),
+                "phi_observed": phi_obs,
+                "phi_predicted": phi_pred,
+                "delta_phi": delta,
+                "abs_delta_phi": abs_delta,
+                "direction": _class_difference_direction(delta),
+                "interpretation": _class_difference_interpretation(phi_pred, phi_obs),
+            }
+        )
+
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "feature",
+            "value",
+            "phi_observed",
+            "phi_predicted",
+            "delta_phi",
+            "abs_delta_phi",
+            "direction",
+            "interpretation",
+        ],
+    )
+
+
+def compute_shap_class_difference(
+    shap_values: Any,
+    class_labels: Sequence[Any],
+    observed_label: Any,
+    predicted_label: Any,
+) -> dict[str, Any]:
+    """Compare SHAP attributions for the observed and predicted class.
+
+    The returned vectors are sanitized to keep the explanation robust when the
+    underlying SHAP output contains NaN or inf values.
+    """
+
+    class_labels_arr = _normalize_label_array(class_labels, name="class_labels")
+    observed_idx = _resolve_label_index(class_labels_arr, observed_label, label_name="observed_label")
+    predicted_idx = _resolve_label_index(class_labels_arr, predicted_label, label_name="predicted_label")
+
+    classwise = _normalize_classwise_shap_values(shap_values, class_labels_arr)
+    phi_observed = np.asarray(classwise[observed_idx], dtype=float).reshape(-1)
+    phi_predicted = np.asarray(classwise[predicted_idx], dtype=float).reshape(-1)
+    delta_phi = phi_predicted - phi_observed
+    abs_delta_phi = np.abs(delta_phi)
+
+    return {
+        "observed_label": _scalar(observed_label),
+        "predicted_label": _scalar(predicted_label),
+        "phi_observed": phi_observed.copy(),
+        "phi_predicted": phi_predicted.copy(),
+        "delta_phi": delta_phi.copy(),
+        "abs_delta_phi": abs_delta_phi.copy(),
+    }
+
+
+def explain_instance_shap_difference(
+    shap_values: Any,
+    class_labels: Sequence[Any],
+    feature_names: Sequence[Any],
+    feature_values: Any,
+    observed_label: Any,
+    predicted_label: Any,
+    top_k: int | None = 5,
+) -> pd.DataFrame:
+    """Explain one instance by contrasting observed-vs-predicted SHAP values."""
+
+    class_difference = compute_shap_class_difference(
+        shap_values=shap_values,
+        class_labels=class_labels,
+        observed_label=observed_label,
+        predicted_label=predicted_label,
+    )
+    return _build_difference_frame(
+        class_difference,
+        feature_names,
+        feature_values,
+        top_k=top_k,
+    )
+
+
+def compute_explanatory_noise_score(
+    delta_phi: Any,
+    phi_observed: Any,
+    phi_predicted: Any,
+    eps: float = 1e-12,
+) -> float:
+    """Measure the strength of the SHAP shift between two classes.
+
+    This score complements the filter's ``noise_score``: the filter decides how
+    suspicious an instance looks, while this score measures how much the local
+    attribution pattern changes between the observed and predicted classes.
+    """
+
+    delta_arr = np.nan_to_num(np.asarray(delta_phi, dtype=float).reshape(-1), nan=0.0, posinf=0.0, neginf=0.0)
+    obs_arr = np.nan_to_num(np.asarray(phi_observed, dtype=float).reshape(-1), nan=0.0, posinf=0.0, neginf=0.0)
+    pred_arr = np.nan_to_num(np.asarray(phi_predicted, dtype=float).reshape(-1), nan=0.0, posinf=0.0, neginf=0.0)
+
+    if not (delta_arr.size == obs_arr.size == pred_arr.size):
+        raise ValueError("delta_phi, phi_observed and phi_predicted must have the same length.")
+
+    numerator = float(np.sum(np.abs(delta_arr)))
+    denominator = float(np.sum(np.abs(obs_arr)) + np.sum(np.abs(pred_arr)) + float(eps))
+    return numerator / denominator
+
+
+def explain_noisy_instances_with_shap(
+    X: Any,
+    y_observed: Any,
+    y_pred: Any,
+    shap_values_all: Any,
+    class_labels: Sequence[Any],
+    feature_names: Sequence[Any] | None = None,
+    noisy_mask: Any | None = None,
+    top_k: int | None = 5,
+) -> ShapDifferenceReport:
+    """Build local SHAP difference explanations for the instances flagged as noisy.
+
+    The filter noise score still tells us which samples are suspicious. This
+    report complements it by showing which attributes shift the classifier from
+    the observed label toward the predicted one.
+    """
+
+    if isinstance(X, pd.DataFrame):
+        X_values = X.to_numpy(copy=False)
+        inferred_feature_names = np.asarray(list(X.columns), dtype=object)
+    else:
+        X_values = np.asarray(X)
+        if X_values.ndim != 2:
+            raise ValueError("X must be a 2D array or pandas DataFrame.")
+        inferred_feature_names = np.asarray([f"feature_{idx}" for idx in range(X_values.shape[1])], dtype=object)
+
+    y_observed_arr = np.asarray(y_observed, dtype=object).ravel()
+    y_pred_arr = np.asarray(y_pred, dtype=object).ravel()
+
+    if noisy_mask is None:
+        noisy_mask_arr = y_observed_arr != y_pred_arr
+    else:
+        noisy_mask_arr = np.asarray(noisy_mask, dtype=bool).ravel()
+
+    check_consistent_length(X_values, y_observed_arr, y_pred_arr, noisy_mask_arr, shap_values_all)
+
+    if feature_names is None:
+        feature_names_arr = inferred_feature_names
+    else:
+        feature_names_arr = np.asarray(feature_names, dtype=object).ravel()
+
+    if feature_names_arr.shape[0] != X_values.shape[1]:
+        raise ValueError(
+            f"feature_names length ({feature_names_arr.shape[0]}) does not match the number of features ({X_values.shape[1]})."
+        )
+
+    class_labels_arr = _normalize_label_array(class_labels, name="class_labels")
+
+    if top_k is not None and int(top_k) < 1:
+        raise ValueError("top_k must be >= 1 when provided.")
+
+    selected_indices = np.flatnonzero(noisy_mask_arr)
+    summary_depth = X_values.shape[1] if top_k is None else min(int(top_k), X_values.shape[1])
+    summary_columns = ["instance_index", "observed_label", "predicted_label", "explanatory_noise_score"]
+    for rank in range(1, summary_depth + 1):
+        summary_columns.extend([f"top_feature_{rank}", f"top_delta_{rank}"])
+
+    items: list[ShapDifferenceInstanceExplanation] = []
+    summary_rows: list[dict[str, Any]] = []
+
+    for instance_index in selected_indices:
+        sample_shap_values = shap_values_all[instance_index]
+        class_difference = compute_shap_class_difference(
+            sample_shap_values,
+            class_labels_arr,
+            y_observed_arr[instance_index],
+            y_pred_arr[instance_index],
+        )
+        feature_table = _build_difference_frame(
+            class_difference,
+            feature_names_arr,
+            X_values[instance_index],
+            top_k=top_k,
+        )
+        explanatory_noise_score = compute_explanatory_noise_score(
+            class_difference["delta_phi"],
+            class_difference["phi_observed"],
+            class_difference["phi_predicted"],
+        )
+
+        items.append(
+            ShapDifferenceInstanceExplanation(
+                instance_index=int(instance_index),
+                observed_label=_scalar(y_observed_arr[instance_index]),
+                predicted_label=_scalar(y_pred_arr[instance_index]),
+                explanatory_noise_score=float(explanatory_noise_score),
+                class_difference=class_difference,
+                top_features=feature_table,
+            )
+        )
+
+        summary_row = {
+            "instance_index": int(instance_index),
+            "observed_label": _scalar(y_observed_arr[instance_index]),
+            "predicted_label": _scalar(y_pred_arr[instance_index]),
+            "explanatory_noise_score": float(explanatory_noise_score),
+        }
+        for rank, (_, feature_row) in enumerate(feature_table.iterrows(), start=1):
+            summary_row[f"top_feature_{rank}"] = feature_row["feature"]
+            summary_row[f"top_delta_{rank}"] = float(feature_row["delta_phi"])
+        summary_rows.append(summary_row)
+
+    summary_df = pd.DataFrame(summary_rows, columns=summary_columns)
+    summary_df = summary_df.reset_index(drop=True)
+
+    return ShapDifferenceReport(
+        items=items,
+        summary=summary_df,
+        feature_names=feature_names_arr,
+        class_labels=class_labels_arr,
+        noisy_mask=np.asarray(noisy_mask_arr, dtype=bool),
+        top_k=None if top_k is None else int(top_k),
+        n_samples=int(X_values.shape[0]),
+        n_features=int(X_values.shape[1]),
+    )
+
+
 __all__ = [
     "ClassificationFilterSHAPExplanation",
     "ClassificationFilterSHAPReport",
+    "ShapDifferenceInstanceExplanation",
+    "ShapDifferenceReport",
+    "compute_explanatory_noise_score",
+    "compute_shap_class_difference",
     "explain_classification_filter_noisy_instances",
+    "explain_instance_shap_difference",
+    "explain_noisy_instances_with_shap",
 ]
