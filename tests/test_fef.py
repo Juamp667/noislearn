@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 from sklearn.base import BaseEstimator
 
 from filters import FilterEnsembleFilter
@@ -55,6 +56,32 @@ class _RandomDummyFilter(BaseEstimator):
             "predicted_labels": None,
         }
         return self
+
+    def get_detection_report(self):
+        return dict(self.detection_report_)
+
+
+class _PrefittedDummyFilter(BaseEstimator):
+    def __init__(self, noisy_mask, noise_score=None, random_state=None):
+        self.noisy_mask = noisy_mask
+        self.noise_score = noise_score
+        self.random_state = random_state
+
+        self.noisy_mask_ = np.asarray(noisy_mask, dtype=bool).copy()
+        self.noisy_indices_ = np.flatnonzero(self.noisy_mask_)
+        self.keep_mask_ = ~self.noisy_mask_
+        self.noise_score_ = None if noise_score is None else np.asarray(noise_score, dtype=float).copy()
+        self.detection_report_ = {
+            "n_samples": int(self.noisy_mask_.size),
+            "n_noisy": int(self.noisy_mask_.sum()),
+            "noisy_indices": self.noisy_indices_.copy(),
+            "noisy_mask": self.noisy_mask_.copy(),
+            "noise_score": None if self.noise_score_ is None else self.noise_score_.copy(),
+            "predicted_labels": None,
+        }
+
+    def fit(self, X, y):
+        raise AssertionError("fit should not be called for a prefit filter")
 
     def get_detection_report(self):
         return dict(self.detection_report_)
@@ -301,3 +328,51 @@ def test_fef_does_not_modify_original_base_filters():
     assert base_filter.fit_calls == 0
     assert not hasattr(base_filter, "detection_report_")
     assert not hasattr(base_filter, "noisy_mask_")
+
+
+def test_fef_can_use_prefitted_base_filters_without_refitting():
+    X = np.zeros((4, 1), dtype=float)
+    y = np.array([0, 1, 0, 1], dtype=int)
+
+    base_filters = [
+        _PrefittedDummyFilter([1, 0, 1, 0], [0.9, 0.2, 0.8, 0.1]),
+        _PrefittedDummyFilter([0, 1, 1, 0], [0.9, 0.2, 0.8, 0.1]),
+    ]
+
+    fef_union = FilterEnsembleFilter(
+        base_filters=base_filters,
+        strategy="union",
+        refit_base_filters=False,
+        use_filter_scores=True,
+        normalize_scores=False,
+    )
+    fef_threshold = FilterEnsembleFilter(
+        base_filters=base_filters,
+        strategy="threshold",
+        vote_threshold=0.5,
+        refit_base_filters=False,
+        use_filter_scores=True,
+        normalize_scores=False,
+    )
+
+    fef_union.fit(X, y)
+    fef_threshold.fit(X, y)
+
+    assert np.array_equal(fef_union.noisy_mask_, np.array([True, True, True, False], dtype=bool))
+    assert np.array_equal(fef_threshold.noisy_mask_, np.array([True, True, True, False], dtype=bool))
+    assert all(filter_.noise_score_ is not None for filter_ in base_filters)
+
+
+def test_fef_refits_base_filters_by_default():
+    X = np.zeros((4, 1), dtype=float)
+    y = np.array([0, 1, 0, 1], dtype=int)
+
+    base_filters = [
+        _PrefittedDummyFilter([1, 0, 1, 0], [0.9, 0.2, 0.8, 0.1]),
+        _PrefittedDummyFilter([0, 1, 1, 0], [0.9, 0.2, 0.8, 0.1]),
+    ]
+
+    fef = FilterEnsembleFilter(base_filters=base_filters, strategy="union")
+
+    with pytest.raises(AssertionError, match="fit should not be called"):
+        fef.fit(X, y)

@@ -12,11 +12,14 @@ class URLFNoise(BaseEstimator):
         return self
 
     def transform_y(self, y):
-        return urlf(
+        y_out, noise_mask = urlf(
             y,
             noise_level=self.noise_level,
-            random_state=self.random_state
+            random_state=self.random_state,
+            return_mask=True,
         )
+        self.noise_mask_ = noise_mask
+        return y_out
 
     def fit_resample(self, X, y):
         return X, self.transform_y(y)
@@ -36,12 +39,15 @@ class NARNoise(BaseEstimator):
         return self
 
     def transform_y(self, y):
-        return nar(
+        y_out, noise_mask = nar(
             y,
             noise_levels=self.noise_levels,
             random_state=self.random_state,
-            random_range=self.random_range
+            random_range=self.random_range,
+            return_mask=True,
         )
+        self.noise_mask_ = noise_mask
+        return y_out
 
     def fit_resample(self, X, y):
         return X, self.transform_y(y)

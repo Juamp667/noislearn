@@ -23,6 +23,7 @@ class _BaseFilterOutput:
     name: str
     noisy_mask: np.ndarray
     predicted_labels: np.ndarray
+    has_label_proposals: bool
 
 
 @dataclass
@@ -321,16 +322,24 @@ class CNCNOSCleaner(BaseEstimator):
                     pred, _ = self._majority_vote(fold_preds[:, i], fallback=y[i])
                     predicted_labels[i] = y[i] if pred is None else pred
 
+        if predicted_labels is None and hasattr(fitted_filter, "committee_pred_"):
+            predicted_labels = np.asarray(getattr(fitted_filter, "committee_pred_"), dtype=object)
+
+        if predicted_labels is None and hasattr(fitted_filter, "detection_report_"):
+            report = getattr(fitted_filter, "detection_report_", None)
+            if isinstance(report, dict) and report.get("predicted_labels") is not None:
+                predicted_labels = np.asarray(report["predicted_labels"], dtype=object)
+
         # If `predicted_labels` couldn't be retrieved before
         # estimate them with the preffited filter
         if predicted_labels is None and hasattr(fitted_filter, "predict"):
             try:
                 predicted_labels = np.asarray(fitted_filter.predict(X), dtype=object)
             except Exception:
-                predicted_labels = np.asarray(y, dtype=object).copy()
+                predicted_labels = None
 
+        has_label_proposals = predicted_labels is not None
         if predicted_labels is None:
-            raise ValueError(f"No predicted labels could be retrieved from {type(fitted_filter).__name__}.") 
             predicted_labels = np.asarray(y, dtype=object).copy()
 
         if predicted_labels.shape[0] != X.shape[0]:
@@ -344,6 +353,7 @@ class CNCNOSCleaner(BaseEstimator):
             name=type(fitted_filter).__name__,
             noisy_mask=noisy_mask,
             predicted_labels=predicted_labels,
+            has_label_proposals=has_label_proposals,
         )
 
     def _fit_base_filters(self, X: np.ndarray, y: np.ndarray, iteration_idx: int):
@@ -401,25 +411,26 @@ class CNCNOSCleaner(BaseEstimator):
         # Compute clean(e_i)
         # -----------------------------
         total_dist_sum = np.sum(neigh_dist, axis=1)
-
-        if np.any(total_dist_sum <= 0.0):
-            bad_idx = np.flatnonzero(total_dist_sum <= 0.0)
-            raise ValueError(
-                "No se puede calcular clean(e_i): hay instancias cuya suma "
-                f"de distancias a sus vecinos es cero. Índices afectados: {bad_idx[:10]}"
-            )
-
         noisy_neighbor_mask = candidate_mask[neigh_idx]
         noisy_dist_sum = np.sum(neigh_dist * noisy_neighbor_mask, axis=1)
 
-        safe_total_dist_sum = total_dist_sum.copy()
-        safe_total_dist_sum[safe_total_dist_sum <= 0.0] = 1.0
+        noise_density = np.divide(
+            noisy_dist_sum,
+            total_dist_sum,
+            out=np.zeros_like(total_dist_sum, dtype=float),
+            where=total_dist_sum > 0.0,
+        )
+        zero_dist_mask = total_dist_sum <= 0.0
+        if np.any(zero_dist_mask):
+            # If all neighbor distances are zero, distance weighting is undefined.
+            # Treat tied neighbors uniformly instead of aborting the cleaning run.
+            noise_density[zero_dist_mask] = np.mean(noisy_neighbor_mask[zero_dist_mask], axis=1)
 
-        is_noise = np.where(candidate_mask, 1.0, -1.0)
-
-        clean = (
-            total_dist_sum + is_noise * (noisy_dist_sum - total_dist_sum)
-        ) / (2.0 * safe_total_dist_sum)
+        clean = np.where(
+            candidate_mask,
+            0.5 * noise_density,
+            1.0 - 0.5 * noise_density,
+        )
 
 
         # -----------------------------
@@ -548,9 +559,11 @@ class CNCNOSCleaner(BaseEstimator):
                 stagnation_counter = 0
             prev_mean_wns = mean_wns
             
-            # Extract the labels proposed by each filter
-            proposal_labels = np.empty((len(outputs), X_curr.shape[0]), dtype=object) # -> shape=(n_filters, n_curr_samples)
-            for out_idx, out in enumerate(outputs):
+            # Extract the labels proposed by filters that expose class predictions.
+            # Detector-only filters still vote for NF but do not participate in relabelling.
+            label_outputs = [out for out in outputs if out.has_label_proposals]
+            proposal_labels = np.empty((len(label_outputs), X_curr.shape[0]), dtype=object) # -> shape=(n_label_filters, n_curr_samples)
+            for out_idx, out in enumerate(label_outputs):
                 # For each model, associate the filter predicted label if its flagged as noisy by itself
                 # else leave the original one
                 proposal_labels[out_idx] = np.where(out.noisy_mask, out.predicted_labels, y_curr)
@@ -585,6 +598,9 @@ class CNCNOSCleaner(BaseEstimator):
                     retain_mask_curr[idx] = True
                     continue
 
+                if proposal_labels.shape[0] == 0:
+                    continue
+
                 # Consensus gets priority, then majority voting if the score is
                 # at least as high as the average candidate score.
                 counts_idx = np.unique(proposal_labels[:, idx], return_counts=True) # Predicted class and associated counts made by filters to the candidate[idx]
@@ -593,7 +609,7 @@ class CNCNOSCleaner(BaseEstimator):
                 best_label = unique_labels[int(np.argmax(label_counts))]    # Label with higher counts
                 best_count = int(np.max(label_counts))    # Higher label_count
                 consensus = unique_labels.size == 1 # There is a consensus if and only if one class is predicted by all the filters (the same)
-                majority = best_count > (len(outputs) / 2.0)    # There is a majority voted class if there is one voted more than half the times
+                majority = best_count > (proposal_labels.shape[0] / 2.0)    # There is a majority voted class if there is one voted more than half the times
                 
 
                 # Decide what to do with the candidate

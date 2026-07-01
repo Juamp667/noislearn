@@ -295,7 +295,7 @@ def explain_classification_filter_noisy_instances(
         masker = shap.maskers.Independent(background, max_samples=background.shape[0])
         explainer = shap.Explainer(
             model.predict_proba, 
-            background, 
+            masker, 
             algorithm=algorithm, 
             output_names=classes
         )
@@ -648,6 +648,14 @@ class ShapDifferenceInstanceExplanation:
     explanatory_noise_score: float
     class_difference: dict[str, Any]
     top_features: pd.DataFrame
+    fold_idx: int | None = None
+    observed_label_idx: int | None = None
+    predicted_label_idx: int | None = None
+    confidence: float | None = None
+    noise_score: float | None = None
+    is_noisy: bool | None = None
+    base_value_observed: float | None = None
+    base_value_predicted: float | None = None
 
 
 @dataclass
@@ -662,6 +670,18 @@ class ShapDifferenceReport:
     top_k: int | None
     n_samples: int
     n_features: int
+    sample_indices: np.ndarray | None = None
+    noisy_indices: np.ndarray | None = None
+    noisy_only: bool | None = None
+    sort_by: str | None = None
+    ascending: bool | None = None
+    algorithm: str | None = None
+    background_size: int | None = None
+    background_random_state: int | None = None
+    max_evals: int | None = None
+    cv: int | None = None
+    random_state: int | None = None
+    estimator_name: str | None = None
 
     def __iter__(self):
         return iter(self.items)
@@ -945,6 +965,295 @@ def compute_explanatory_noise_score(
     return numerator / denominator
 
 
+def _sort_difference_items(
+    items: list[ShapDifferenceInstanceExplanation],
+    *,
+    sort_by: str,
+    ascending: bool,
+):
+    if sort_by in {"sample_idx", "instance_index"}:
+        return sorted(items, key=lambda item: item.instance_index, reverse=not ascending)
+
+    if sort_by == "fold_idx":
+        return sorted(items, key=lambda item: -1 if item.fold_idx is None else item.fold_idx, reverse=not ascending)
+
+    if sort_by in {"confidence", "noise_score", "explanatory_noise_score"}:
+        valid = []
+        missing = []
+        for item in items:
+            value = getattr(item, sort_by)
+            if value is None or np.isnan(value):
+                missing.append(item)
+            else:
+                valid.append(item)
+        valid.sort(key=lambda item: float(getattr(item, sort_by)), reverse=not ascending)
+        return valid + missing
+
+    raise ValueError("sort_by must be 'confidence', 'noise_score', 'explanatory_noise_score', 'fold_idx' or 'sample_idx'")
+
+
+def _classification_filter_difference_summary_columns(summary_depth: int):
+    columns = [
+        "instance_index",
+        "fold_idx",
+        "observed_label",
+        "predicted_label",
+        "confidence",
+        "noise_score",
+        "explanatory_noise_score",
+        "is_noisy",
+    ]
+    for rank in range(1, int(summary_depth) + 1):
+        columns.extend([f"top_feature_{rank}", f"top_delta_{rank}"])
+    return columns
+
+
+def _classification_filter_difference_summary_row(item: ShapDifferenceInstanceExplanation, summary_depth: int):
+    row = {
+        "instance_index": int(item.instance_index),
+        "fold_idx": item.fold_idx,
+        "observed_label": item.observed_label,
+        "predicted_label": item.predicted_label,
+        "confidence": item.confidence,
+        "noise_score": item.noise_score,
+        "explanatory_noise_score": float(item.explanatory_noise_score),
+        "is_noisy": item.is_noisy,
+    }
+    for rank, (_, feature_row) in enumerate(item.top_features.iterrows(), start=1):
+        if rank > int(summary_depth):
+            break
+        row[f"top_feature_{rank}"] = feature_row["feature"]
+        row[f"top_delta_{rank}"] = float(feature_row["delta_phi"])
+    return row
+
+
+def explain_classification_filter_shap_difference(
+    fitted_filter: ClassificationFilter,
+    sample_indices: Sequence[int] | np.ndarray | None = None,
+    *,
+    noisy_only: bool = True,
+    top_k: int | None = 5,
+    feature_names: Sequence[Any] | None = None,
+    background_size: int | None = None,
+    background_random_state: int | None = None,
+    algorithm: str = "auto",
+    max_evals: int | None = None,
+    sort_by: str = "confidence",
+    ascending: bool = True,
+) -> ShapDifferenceReport:
+    """Explain observed-vs-predicted OOF SHAP differences from a fitted filter.
+
+    The function mirrors ``explain_classification_filter_noisy_instances``: it
+    reconstructs the original cross-validation splits, refits the fold model and
+    computes SHAP on the selected out-of-fold samples. For every sample, it then
+    contrasts the SHAP vector of the observed label with the SHAP vector of the
+    out-of-fold predicted label.
+
+    By default, ``background_size=None`` uses the full training fold as SHAP
+    background for each model. Pass an integer only when a smaller background is
+    explicitly desired for speed.
+    """
+
+    check_is_fitted(fitted_filter, ["result_", "X_", "y_", "classes_"])
+
+    try:
+        import shap
+    except ModuleNotFoundError as e:
+        raise ImportError("shap is required for SHAP explanations. Install shap and retry.") from e
+
+    if not hasattr(fitted_filter.estimator, "predict_proba"):
+        raise ValueError("ClassificationFilter SHAP difference explanations require an estimator with predict_proba().")
+    if background_size is not None and int(background_size) < 1:
+        raise ValueError("background_size must be >= 1 when provided")
+    if max_evals is not None and int(max_evals) < 1:
+        raise ValueError("max_evals must be >= 1 when provided")
+    if sort_by not in {"confidence", "noise_score", "explanatory_noise_score", "fold_idx", "sample_idx", "instance_index"}:
+        raise ValueError(
+            "sort_by must be 'confidence', 'noise_score', 'explanatory_noise_score', 'fold_idx' or 'sample_idx'"
+        )
+
+    X = np.asarray(fitted_filter.X_)
+    y = np.asarray(fitted_filter.y_)
+    classes = np.asarray(fitted_filter.classes_, dtype=object)
+    n_samples, n_features = X.shape
+    filter_random_state = fitted_filter.random_state
+
+    if int(fitted_filter.cv) < 2:
+        raise ValueError("cv must be >= 2")
+
+    feature_names_arr = _resolve_feature_names(feature_names, n_features)
+    y_idx = _labels_to_indices(y, classes)
+    oof_pred_idx = _labels_to_indices(np.asarray(fitted_filter.result_.oof_pred, dtype=object), classes)
+    noisy_mask = ~np.asarray(fitted_filter.result_.keep_mask, dtype=bool)
+    max_evals_eff = None if max_evals is None else int(max_evals)
+
+    selected_indices = _normalize_sample_indices(sample_indices, n_samples)
+    if noisy_only:
+        selected_indices = [idx for idx in selected_indices if bool(noisy_mask[idx])]
+
+    summary_depth = n_features if top_k is None else min(int(top_k), n_features)
+    if top_k is not None and int(top_k) < 1:
+        raise ValueError("top_k must be >= 1 when provided.")
+    summary_columns = _classification_filter_difference_summary_columns(summary_depth)
+
+    if not selected_indices:
+        summary_df = pd.DataFrame([], columns=summary_columns)
+        report = ShapDifferenceReport(
+            items=[],
+            summary=summary_df,
+            feature_names=feature_names_arr,
+            class_labels=classes,
+            noisy_mask=np.asarray(noisy_mask, dtype=bool),
+            top_k=None if top_k is None else int(top_k),
+            n_samples=int(n_samples),
+            n_features=int(n_features),
+            sample_indices=np.asarray(selected_indices, dtype=int),
+            noisy_indices=np.asarray([], dtype=int),
+            noisy_only=bool(noisy_only),
+            sort_by=sort_by,
+            ascending=bool(ascending),
+            algorithm=algorithm,
+            background_size=None if background_size is None else int(background_size),
+            background_random_state=None if background_random_state is None else int(background_random_state),
+            max_evals=max_evals_eff,
+            cv=int(fitted_filter.cv),
+            random_state=None if filter_random_state is None else int(filter_random_state),
+            estimator_name=type(fitted_filter.estimator).__name__,
+        )
+        fitted_filter.shap_difference_report_ = report
+        return report
+
+    skf = StratifiedKFold(n_splits=int(fitted_filter.cv), shuffle=True, random_state=filter_random_state)
+    fold_lookup = np.full(n_samples, -1, dtype=int)
+    fold_splits: list[tuple[np.ndarray, np.ndarray]] = []
+    for fold_idx, (train_idx, test_idx) in enumerate(skf.split(X, y_idx)):
+        fold_lookup[test_idx] = fold_idx
+        fold_splits.append((np.asarray(train_idx, dtype=int), np.asarray(test_idx, dtype=int)))
+
+    if np.any(fold_lookup < 0):
+        raise RuntimeError("Internal error: some samples were not assigned to any fold.")
+
+    grouped_indices: dict[int, list[int]] = {}
+    for sample_idx in selected_indices:
+        fold_idx = int(fold_lookup[sample_idx])
+        grouped_indices.setdefault(fold_idx, []).append(int(sample_idx))
+
+    seed_base = filter_random_state if background_random_state is None else background_random_state
+    if seed_base is not None:
+        seed_base = int(seed_base)
+
+    items: list[ShapDifferenceInstanceExplanation] = []
+    for fold_idx in sorted(grouped_indices):
+        train_idx, _ = fold_splits[fold_idx]
+        fold_y_idx = y_idx[train_idx]
+        rng = np.random.default_rng(None if seed_base is None else seed_base + fold_idx)
+        background_idx = _select_background_indices(train_idx, fold_y_idx, background_size, rng, classes.shape[0])
+
+        model = clone(fitted_filter.estimator)
+        model.fit(X[train_idx], y_idx[train_idx])
+
+        background = X[background_idx]
+        masker = shap.maskers.Independent(background, max_samples=background.shape[0])
+        explainer = shap.Explainer(
+            model.predict_proba,
+            masker,
+            algorithm=algorithm,
+            output_names=classes,
+        )
+
+        batch_indices = np.asarray(grouped_indices[fold_idx], dtype=int)
+        batch_proba = model.predict_proba(X[batch_indices])
+        batch_explanation = explainer(X[batch_indices], max_evals=max_evals_eff)
+
+        for pos, sample_idx in enumerate(batch_indices):
+            observed_idx = int(y_idx[sample_idx])
+            predicted_idx = int(oof_pred_idx[sample_idx])
+            sample_explanation = batch_explanation[pos]
+            phi_observed, base_observed = _extract_sample_shap_values(sample_explanation, observed_idx)
+            phi_predicted, base_predicted = _extract_sample_shap_values(sample_explanation, predicted_idx)
+            phi_observed = np.nan_to_num(phi_observed, nan=0.0, posinf=0.0, neginf=0.0)
+            phi_predicted = np.nan_to_num(phi_predicted, nan=0.0, posinf=0.0, neginf=0.0)
+
+            if phi_observed.shape[0] != phi_predicted.shape[0]:
+                raise ValueError("Observed and predicted SHAP vectors must have the same feature dimension.")
+
+            delta_phi = phi_predicted - phi_observed
+            abs_delta_phi = np.abs(delta_phi)
+            class_difference = {
+                "observed_label": _scalar(classes[observed_idx]),
+                "predicted_label": _scalar(classes[predicted_idx]),
+                "phi_observed": phi_observed.copy(),
+                "phi_predicted": phi_predicted.copy(),
+                "delta_phi": delta_phi.copy(),
+                "abs_delta_phi": abs_delta_phi.copy(),
+                "base_value_observed": base_observed,
+                "base_value_predicted": base_predicted,
+            }
+            feature_table = _build_difference_frame(
+                class_difference,
+                feature_names_arr,
+                X[sample_idx],
+                top_k=top_k,
+            )
+            explanatory_noise_score = compute_explanatory_noise_score(
+                delta_phi,
+                phi_observed,
+                phi_predicted,
+            )
+            confidence = _sample_confidence(batch_proba, pos, predicted_idx)
+            noise_score = _sample_noise_score(fitted_filter, int(sample_idx))
+
+            items.append(
+                ShapDifferenceInstanceExplanation(
+                    instance_index=int(sample_idx),
+                    observed_label=_scalar(classes[observed_idx]),
+                    predicted_label=_scalar(classes[predicted_idx]),
+                    explanatory_noise_score=float(explanatory_noise_score),
+                    class_difference=class_difference,
+                    top_features=feature_table,
+                    fold_idx=int(fold_idx),
+                    observed_label_idx=observed_idx,
+                    predicted_label_idx=predicted_idx,
+                    confidence=confidence,
+                    noise_score=noise_score,
+                    is_noisy=bool(noisy_mask[sample_idx]),
+                    base_value_observed=base_observed,
+                    base_value_predicted=base_predicted,
+                )
+            )
+
+    items = _sort_difference_items(items, sort_by=sort_by, ascending=bool(ascending))
+    summary_df = pd.DataFrame(
+        [_classification_filter_difference_summary_row(item, summary_depth) for item in items],
+        columns=summary_columns,
+    ).reset_index(drop=True)
+
+    report = ShapDifferenceReport(
+        items=items,
+        summary=summary_df,
+        feature_names=feature_names_arr,
+        class_labels=classes,
+        noisy_mask=np.asarray(noisy_mask, dtype=bool),
+        top_k=None if top_k is None else int(top_k),
+        n_samples=int(n_samples),
+        n_features=int(n_features),
+        sample_indices=np.asarray(selected_indices, dtype=int),
+        noisy_indices=np.asarray([item.instance_index for item in items if bool(item.is_noisy)], dtype=int),
+        noisy_only=bool(noisy_only),
+        sort_by=sort_by,
+        ascending=bool(ascending),
+        algorithm=algorithm,
+        background_size=None if background_size is None else int(background_size),
+        background_random_state=None if background_random_state is None else int(background_random_state),
+        max_evals=max_evals_eff,
+        cv=int(fitted_filter.cv),
+        random_state=None if filter_random_state is None else int(filter_random_state),
+        estimator_name=type(fitted_filter.estimator).__name__,
+    )
+    fitted_filter.shap_difference_report_ = report
+    return report
+
+
 def explain_noisy_instances_with_shap(
     X: Any,
     y_observed: Any,
@@ -1070,6 +1379,7 @@ __all__ = [
     "compute_explanatory_noise_score",
     "compute_shap_class_difference",
     "explain_classification_filter_noisy_instances",
+    "explain_classification_filter_shap_difference",
     "explain_instance_shap_difference",
     "explain_noisy_instances_with_shap",
 ]

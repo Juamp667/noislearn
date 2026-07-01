@@ -45,7 +45,7 @@ class CVCFFilter(BaseEstimator):
         Base learner cloned for each fold of the committee.
     cv : int, default=10
         Number of stratified folds used to build the committee.
-    vote_rule : {"threshold", "consensus"}, default="threshold"
+    vote_rule : {"threshold", "majority", "consensus"}, default="threshold"
         Rule used to flag samples as noisy from the fold disagreements.
     threshold : float, default=0.5
         Minimum fraction of disagreeing folds required when ``vote_rule="threshold"``.
@@ -73,9 +73,11 @@ class CVCFFilter(BaseEstimator):
         '''
         if self.vote_rule == "consensus":
             return disagree_count == n_models
+        if self.vote_rule == "majority":
+            return disagree_count > (n_models / 2.0)
         if self.vote_rule == "threshold":
             return (disagree_count / float(n_models)) >= self.threshold
-        raise ValueError("vote_rule must be 'threshold' or 'consensus'")
+        raise ValueError("vote_rule must be 'threshold', 'majority', or 'consensus'")
 
     def fit(self, X, y):
         """Fit the filter and cache fold-wise predictions and agreement scores."""

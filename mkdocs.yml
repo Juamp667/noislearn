@@ -74,10 +74,13 @@ nav:
       - Getting started: guide/getting-started.md
       - Noise models: guide/noise-models.md
       - TabPFN explainability: guide/tabpfn-explainability.md
+      - Evaluation workflow: guide/evaluation.md
   - API Reference:
       - Overview: api/index.md
+      - Noise generators: api/noisers.md
       - Filters:
           - Distance-based: api/filters/distance-based.md
           - Classifier-based: api/filters/classifier-based.md
           - TabPFN-based: api/filters/tabpfn-based.md
       - Cleaners: api/cleaners.md
+      - Evaluation utilities: api/evaluation.md

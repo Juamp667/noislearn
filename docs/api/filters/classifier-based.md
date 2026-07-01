@@ -55,6 +55,8 @@ These filters compare the observed labels against predictions obtained from one 
 
 ## FilterEnsembleFilter
 
+FEF accepts either filter instances or `(name, filter)` pairs. It supports `union`, `majority`, `consensus`, `k_of_m`, `threshold`, and `weighted_threshold` strategies. The report includes per-filter votes, score matrices, normalized weights, support counts, support fractions, base reports, and class-protection metadata.
+
 ::: filters.classifier_based.fef.FilterEnsembleFilter
     options:
       show_root_heading: false
@@ -62,6 +64,16 @@ These filters compare the observed labels against predictions obtained from one 
       heading_level: 3
 
 ::: filters.classifier_based.fef.FilterEnsembleFilterResult
+    options:
+      show_root_heading: false
+      show_source: false
+      heading_level: 3
+
+## NoiseScoreFilter
+
+`NoiseScoreFilter` thresholds an existing score vector or the `noise_score_` exposed by another fitted filter. It supports fixed numeric thresholds, `mean`, `quantile`, beta-adaptive thresholding, and rational-valley thresholding with a detailed `threshold_report_`.
+
+::: filters.noiseScoreFiltering.NoiseScoreFilter
     options:
       show_root_heading: false
       show_source: false

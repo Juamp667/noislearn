@@ -4,7 +4,7 @@
 
 import numpy as np
 
-def urlf(y, noise_level=0.1, random_state=42):
+def urlf(y, noise_level=0.1, random_state=42, return_mask=False):
     """
     Uniform Randomized Label Flip noise.
 
@@ -33,11 +33,17 @@ def urlf(y, noise_level=0.1, random_state=42):
         Seed used to initialize the random number generator. It allows the noise
         generation process to be reproducible.
 
+    return_mask : bool, default=False
+        If True, also return a boolean mask indicating which final labels differ
+        from the original labels.
+
     Returns
     -------
     y_out : numpy.ndarray
         Copy of the original labels with uniform randomized label flip noise
         applied.
+    noise_mask : numpy.ndarray, optional
+        Boolean mask returned only when return_mask=True.
 
     Notes
     -----
@@ -77,7 +83,8 @@ def urlf(y, noise_level=0.1, random_state=42):
     k = int(noise_level * n)
     if k <= 0:
         print("No noise has been added, since the noise_level is too low.")
-        return y_out
+        noise_mask = np.zeros(n, dtype=bool)
+        return (y_out, noise_mask) if return_mask else y_out
     
     # Randomly select the (instance) indices to shift 
     idx_to_change = rng.integers(low=0, high=n, size=k)
@@ -92,10 +99,11 @@ def urlf(y, noise_level=0.1, random_state=42):
 
     # Shift and return idx_to_change
     y_out[idx_to_change] = classes[new_idx]
-    return y_out
+    noise_mask = y_out != y
+    return (y_out, noise_mask) if return_mask else y_out
 
 
-def nar(y, noise_levels=None, random_state=42, random_range=(0.0, 0.2)):
+def nar(y, noise_levels=None, random_state=42, random_range=(0.0, 0.2), return_mask=False):
     """
     Not At Random label noise.
 
@@ -135,10 +143,16 @@ def nar(y, noise_levels=None, random_state=42, random_range=(0.0, 0.2)):
 
             0 <= low <= high <= 1
 
+    return_mask : bool, default=False
+        If True, also return a boolean mask indicating which final labels differ
+        from the original labels.
+
     Returns
     -------
     y_out : numpy.ndarray
         Copy of the original labels with Not At Random noise applied.
+    noise_mask : numpy.ndarray, optional
+        Boolean mask returned only when return_mask=True.
 
     Notes
     -----
@@ -185,7 +199,8 @@ def nar(y, noise_levels=None, random_state=42, random_range=(0.0, 0.2)):
 
     if len(classes) <= 1:
         print("No noise has been added, since there are just one or no classes to be shifted.")
-        return y_out
+        noise_mask = np.zeros(len(y_out), dtype=bool)
+        return (y_out, noise_mask) if return_mask else y_out
 
     # Check or randomly preset the noise level associated to each class
     if noise_levels is None:
@@ -239,7 +254,8 @@ def nar(y, noise_levels=None, random_state=42, random_range=(0.0, 0.2)):
         # Shift and return idx_to_change
         y_out[idx_to_change] = new_labels
 
-    return y_out
+    noise_mask = y_out != y
+    return (y_out, noise_mask) if return_mask else y_out
 
 
     

@@ -9,13 +9,14 @@ hide:
   <img src="../logo.png" alt="noislearn logo" width="180">
 </p>
 
-`noislearn` is an scikit-learn compatible toolkit for label-noise filtering, iterative cleaning, and explainable inspection of noisy decisions.
+`noislearn` is an scikit-learn compatible toolkit for label-noise generation, noise filtering, iterative cleaning, noise-score evaluation, and explainable inspection of noisy decisions.
 
 <div class="hero-meta">
   <span class="hero-pill">Distance-based filters</span>
   <span class="hero-pill">Classifier-based filters</span>
   <span class="hero-pill">TabPFN explanations</span>
   <span class="hero-pill">CNC-NOS cleaner</span>
+  <span class="hero-pill">Noise-score evaluation</span>
 </div>
 
 <div class="hero-actions" markdown>
@@ -31,7 +32,7 @@ hide:
 
     ---
 
-    Classical, distance-based, ensemble-based, and TabPFN-based noise filters.
+    Classical, distance-based, ensemble-based, TabPFN-based, and noise-score filters.
 
     [Browse the filters](api/filters/distance-based.md)
 
@@ -58,6 +59,14 @@ hide:
     Local SHAP-based reports for noisy-instance inspection and auditability.
 
     [Explore the explanation model](guide/tabpfn-explainability.md)
+
+-   :material-chart-line: __Evaluation__
+
+    ---
+
+    Fold-based experiments, persisted noise masks, and continuous noise-score ranking metrics.
+
+    [Open the evaluation guide](guide/evaluation.md)
 
 </div>
 

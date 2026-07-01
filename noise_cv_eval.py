@@ -74,6 +74,9 @@ REMOVAL_COLUMNS = [
     "valid_classification",
     "params",
     "n_true_noisy",
+    "n_known_ground_truth",
+    "n_unknown_ground_truth",
+    "ground_truth_exact",
     "n_removed_pred",
     "removed_pct",
     "acc_removal",
@@ -126,6 +129,281 @@ def _row_noise_mask(clean_train_raw: pd.DataFrame, noisy_train_raw: pd.DataFrame
     return noisy_cmp.ne(clean_cmp).any(axis=1).to_numpy(dtype=bool)
 
 
+def _target_noise_mask(clean_train_raw: pd.DataFrame, noisy_train_raw: pd.DataFrame) -> np.ndarray:
+    if clean_train_raw.shape != noisy_train_raw.shape:
+        raise ValueError(
+            "Clean and noisy training folds must have the same shape to compute the ground-truth noise mask."
+        )
+
+    clean = clean_train_raw.reset_index(drop=True)
+    noisy = noisy_train_raw.reset_index(drop=True).reindex(columns=clean.columns)
+    clean_labels = clean.iloc[:, -1].to_numpy(dtype=object)
+    noisy_labels = noisy.iloc[:, -1].to_numpy(dtype=object)
+    return np.asarray(
+        [
+            _normalise_key_value(noisy_label) != _normalise_key_value(clean_label)
+            for clean_label, noisy_label in zip(clean_labels, noisy_labels)
+        ],
+        dtype=bool,
+    )
+
+
+def _features_match_positionally(clean_train_raw: pd.DataFrame, noisy_train_raw: pd.DataFrame) -> bool:
+    if clean_train_raw.shape != noisy_train_raw.shape:
+        return False
+
+    clean = clean_train_raw.reset_index(drop=True)
+    noisy = noisy_train_raw.reset_index(drop=True).reindex(columns=clean.columns)
+    clean_features = clean.iloc[:, :-1].fillna("__nan__")
+    noisy_features = noisy.iloc[:, :-1].fillna("__nan__")
+    return not bool(noisy_features.ne(clean_features).to_numpy().any())
+
+
+_MISSING_KEY_VALUE = object()
+
+
+def _is_missing_value(value) -> bool:
+    try:
+        return bool(pd.isna(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def _normalise_key_value(value):
+    if _is_missing_value(value):
+        return _MISSING_KEY_VALUE
+    if isinstance(value, np.generic):
+        return value.item()
+    return value
+
+
+def _feature_key(values) -> tuple:
+    return tuple(_normalise_key_value(value) for value in values)
+
+
+_NOISE_MASK_SUFFIXES = (".noise_mask.npy", ".noise_mask.csv", ".noise_mask.txt")
+_NOISE_MASK_COLUMNS = ("is_noisy", "noise_mask", "noisy", "mask")
+_NOISE_MASK_TRUE_VALUES = {"1", "true", "t", "yes", "y"}
+_NOISE_MASK_FALSE_VALUES = {"0", "false", "f", "no", "n"}
+
+
+def _noise_mask_candidate_paths(source_path) -> list[Path]:
+    source_path = Path(source_path)
+    return [source_path.with_suffix(suffix) for suffix in _NOISE_MASK_SUFFIXES]
+
+
+def _read_tabular_noise_mask(mask_path: Path) -> np.ndarray:
+    raw_df = pd.read_csv(mask_path, header=None)
+    if raw_df.shape[1] == 1:
+        values = raw_df.iloc[:, 0]
+        if len(values) and str(values.iloc[0]).strip().lower() in _NOISE_MASK_COLUMNS:
+            values = values.iloc[1:]
+        return values.to_numpy()
+
+    named_df = pd.read_csv(mask_path)
+    for column in _NOISE_MASK_COLUMNS:
+        if column in named_df.columns:
+            return named_df[column].to_numpy()
+
+    raise ValueError(
+        f"Noise mask file {mask_path} must contain one mask column, or one of: "
+        f"{', '.join(_NOISE_MASK_COLUMNS)}."
+    )
+
+
+def _coerce_noise_mask_values(values, expected_len: int, mask_path: Path) -> np.ndarray:
+    values = np.asarray(values)
+    if values.ndim == 0:
+        values = values.reshape(1)
+    elif values.ndim > 1:
+        if 1 not in values.shape:
+            raise ValueError(f"Noise mask file {mask_path} must be one-dimensional.")
+        values = values.reshape(-1)
+
+    if values.shape[0] != expected_len:
+        raise ValueError(
+            f"Noise mask file {mask_path} has {values.shape[0]} row(s), "
+            f"but the noisy training fold has {expected_len}."
+        )
+
+    mask = np.zeros(expected_len, dtype=bool)
+    for idx, value in enumerate(values):
+        if isinstance(value, (bool, np.bool_)):
+            mask[idx] = bool(value)
+            continue
+
+        if _is_missing_value(value):
+            raise ValueError(f"Noise mask file {mask_path} contains a missing value at row {idx}.")
+
+        if isinstance(value, np.generic):
+            value = value.item()
+
+        if isinstance(value, (int, float, np.integer, np.floating)):
+            if value in (0, 1):
+                mask[idx] = bool(value)
+                continue
+
+        text = str(value).strip().lower()
+        if text in _NOISE_MASK_TRUE_VALUES:
+            mask[idx] = True
+        elif text in _NOISE_MASK_FALSE_VALUES:
+            mask[idx] = False
+        else:
+            raise ValueError(
+                f"Noise mask file {mask_path} contains an invalid boolean value "
+                f"at row {idx}: {value!r}."
+            )
+
+    return mask
+
+
+def _load_persisted_noise_mask(noisy_train_raw: pd.DataFrame) -> Optional[np.ndarray]:
+    source_path = noisy_train_raw.attrs.get("source_path")
+    if not source_path:
+        return None
+
+    for mask_path in _noise_mask_candidate_paths(source_path):
+        if not mask_path.exists():
+            continue
+
+        if mask_path.suffix == ".npy":
+            values = np.load(mask_path, allow_pickle=False)
+        elif mask_path.suffix in {".csv", ".txt"}:
+            values = _read_tabular_noise_mask(mask_path)
+        else:  # pragma: no cover - guarded by _NOISE_MASK_SUFFIXES
+            continue
+
+        return _coerce_noise_mask_values(
+            values,
+            expected_len=int(noisy_train_raw.shape[0]),
+            mask_path=mask_path,
+        )
+
+    return None
+
+
+def _class_noise_mask_from_clean_reference(
+    clean_reference_raw: pd.DataFrame,
+    noisy_train_raw: pd.DataFrame,
+    return_known: bool = False,
+    warn_on_ambiguous: bool = True,
+):
+    if clean_reference_raw.shape[1] != noisy_train_raw.shape[1]:
+        raise ValueError(
+            "Clean reference and noisy training fold must have the same number of columns "
+            "to compute the ground-truth class-noise mask."
+        )
+
+    clean_reference = clean_reference_raw.reset_index(drop=True)
+    noisy = noisy_train_raw.reset_index(drop=True).reindex(columns=clean_reference.columns)
+    feature_cols = list(clean_reference.columns[:-1])
+    target_col = clean_reference.columns[-1]
+
+    clean_labels_by_features = {}
+    for _, row in clean_reference.iterrows():
+        key = _feature_key(row[feature_cols].to_numpy(dtype=object))
+        label = _normalise_key_value(row[target_col])
+        clean_labels_by_features.setdefault(key, set()).add(label)
+
+    true_noisy_mask = np.zeros(noisy.shape[0], dtype=bool)
+    known_ground_truth_mask = np.ones(noisy.shape[0], dtype=bool)
+    missing_keys = 0
+    ambiguous_matches = 0
+    for row_idx, row in noisy.iterrows():
+        key = _feature_key(row[feature_cols].to_numpy(dtype=object))
+        if key not in clean_labels_by_features:
+            missing_keys += 1
+            continue
+        noisy_label = _normalise_key_value(row[target_col])
+        clean_labels = clean_labels_by_features[key]
+        if len(clean_labels) == 1:
+            clean_label = next(iter(clean_labels))
+            true_noisy_mask[int(row_idx)] = noisy_label != clean_label
+        elif noisy_label not in clean_labels:
+            true_noisy_mask[int(row_idx)] = True
+        else:
+            known_ground_truth_mask[int(row_idx)] = False
+            ambiguous_matches += 1
+
+    if missing_keys:
+        raise ValueError(
+            "Cannot compute the ground-truth class-noise mask because "
+            f"{missing_keys} noisy training row(s) were not found in the clean reference."
+        )
+
+    if ambiguous_matches and warn_on_ambiguous:
+        warnings.warn(
+            "Some class-noise ground-truth rows are ambiguous because their feature vectors "
+            "match multiple clean labels. They are excluded from removal metrics when the "
+            "extended ground-truth mask is used. Persist a row identifier or a noise_mask "
+            "when generating these noisy datasets for fully exact removal metrics. "
+            f"Ambiguous rows: {ambiguous_matches}.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+
+    if return_known:
+        return true_noisy_mask, known_ground_truth_mask
+
+    return true_noisy_mask
+
+
+def _true_noisy_mask_and_known(
+    dataset: str,
+    noise_type: str,
+    clean_train_raw: pd.DataFrame,
+    noisy_train_raw: pd.DataFrame,
+    root,
+    warn_on_ambiguous: bool = False,
+) -> tuple[np.ndarray, np.ndarray]:
+    known_ground_truth_mask = np.ones(noisy_train_raw.shape[0], dtype=bool)
+
+    if noise_type == "data_base":
+        return np.zeros(noisy_train_raw.shape[0], dtype=bool), known_ground_truth_mask
+
+    persisted_mask = _load_persisted_noise_mask(noisy_train_raw)
+    if persisted_mask is not None:
+        return persisted_mask, known_ground_truth_mask
+
+    if str(noise_type).startswith("cla_"):
+        if _features_match_positionally(clean_train_raw, noisy_train_raw):
+            return _target_noise_mask(clean_train_raw, noisy_train_raw), known_ground_truth_mask
+
+        clean_reference_raw = load_dataset_df(
+            dataset=dataset,
+            noise_type="data_base",
+            split="cc",
+            encoding=None,
+            root=root,
+        )
+        return _class_noise_mask_from_clean_reference(
+            clean_reference_raw,
+            noisy_train_raw,
+            return_known=True,
+            warn_on_ambiguous=warn_on_ambiguous,
+        )
+
+    return _row_noise_mask(clean_train_raw, noisy_train_raw), known_ground_truth_mask
+
+
+def _true_noisy_mask(
+    dataset: str,
+    noise_type: str,
+    clean_train_raw: pd.DataFrame,
+    noisy_train_raw: pd.DataFrame,
+    root,
+) -> np.ndarray:
+    true_noisy_mask, _ = _true_noisy_mask_and_known(
+        dataset=dataset,
+        noise_type=noise_type,
+        clean_train_raw=clean_train_raw,
+        noisy_train_raw=noisy_train_raw,
+        root=root,
+        warn_on_ambiguous=True,
+    )
+    return true_noisy_mask
+
+
 def _load_fold_views(
     dataset: str,
     noise_type: str,
@@ -135,6 +413,8 @@ def _load_fold_views(
     encoding,
     root,
     test_source: str,
+    compute_ground_truth: bool = True,
+    return_ground_truth_known: bool = False,
 ):
     clean_train_raw = load_dataset_df(
         dataset=dataset,
@@ -208,7 +488,22 @@ def _load_fold_views(
         else:
             raise ValueError("test_source must be 'clean' or 'noisy'.")
 
-    true_noisy_mask = _row_noise_mask(clean_train_raw, noisy_train_raw)
+    if not compute_ground_truth:
+        if return_ground_truth_known:
+            return train_df, test_df, None, None
+        return train_df, test_df, None
+
+    true_noisy_mask, known_ground_truth_mask = _true_noisy_mask_and_known(
+        dataset=dataset,
+        noise_type=noise_type,
+        clean_train_raw=clean_train_raw,
+        noisy_train_raw=noisy_train_raw,
+        root=root,
+    )
+
+    if return_ground_truth_known:
+        return train_df, test_df, true_noisy_mask, known_ground_truth_mask
+
     return train_df, test_df, true_noisy_mask
 
 
@@ -362,16 +657,38 @@ def _extract_keep_mask(fitted_pipeline, original_n: int) -> np.ndarray:
     return mask
 
 
-def _removal_metrics(true_noisy_mask: np.ndarray, pred_removed_mask: np.ndarray):
+def _removal_metrics(
+    true_noisy_mask: np.ndarray,
+    pred_removed_mask: np.ndarray,
+    known_ground_truth_mask: Optional[np.ndarray] = None,
+):
     true_noisy_mask = np.asarray(true_noisy_mask, dtype=bool)
     pred_removed_mask = np.asarray(pred_removed_mask, dtype=bool)
 
-    tp = int(np.sum(pred_removed_mask & true_noisy_mask))
-    tn = int(np.sum((~pred_removed_mask) & (~true_noisy_mask)))
-    fp = int(np.sum(pred_removed_mask & (~true_noisy_mask)))
-    fn = int(np.sum((~pred_removed_mask) & true_noisy_mask))
+    if true_noisy_mask.shape != pred_removed_mask.shape:
+        raise ValueError("The true and predicted removal masks must have the same shape.")
 
-    n = int(true_noisy_mask.shape[0])
+    if known_ground_truth_mask is None:
+        known_ground_truth_mask = np.ones(true_noisy_mask.shape[0], dtype=bool)
+    else:
+        known_ground_truth_mask = np.asarray(known_ground_truth_mask, dtype=bool)
+        if known_ground_truth_mask.shape != true_noisy_mask.shape:
+            raise ValueError("The known ground-truth mask must match the true noise mask shape.")
+
+    n_total = int(true_noisy_mask.shape[0])
+    n_known_ground_truth = int(known_ground_truth_mask.sum())
+    n_unknown_ground_truth = n_total - n_known_ground_truth
+    ground_truth_exact = n_unknown_ground_truth == 0
+
+    true_eval = true_noisy_mask[known_ground_truth_mask]
+    pred_eval = pred_removed_mask[known_ground_truth_mask]
+
+    tp = int(np.sum(pred_eval & true_eval))
+    tn = int(np.sum((~pred_eval) & (~true_eval)))
+    fp = int(np.sum(pred_eval & (~true_eval)))
+    fn = int(np.sum((~pred_eval) & true_eval))
+
+    n = n_known_ground_truth
     n_true_noisy = tp + fn
     n_removed_pred = tp + fp
 
@@ -406,6 +723,9 @@ def _removal_metrics(true_noisy_mask: np.ndarray, pred_removed_mask: np.ndarray)
         "fp": fp,
         "fn": fn,
         "n_true_noisy": n_true_noisy,
+        "n_known_ground_truth": n_known_ground_truth,
+        "n_unknown_ground_truth": n_unknown_ground_truth,
+        "ground_truth_exact": ground_truth_exact,
         "n_removed_pred": n_removed_pred,
     }
 
@@ -536,6 +856,7 @@ def run_5cv_baseline(
             encoding=encoding,
             root=root,
             test_source=test_source,
+            compute_ground_truth=False,
         )
 
         X_train = train_df.iloc[:, :-1]
@@ -678,7 +999,7 @@ def run_5cv_filters(
     removal_rows = []
 
     for fold in tqdm(list(folds), desc=f"5CV filters {dataset} {noise_type}", disable=~verbose):
-        train_df, test_df, true_noisy_mask = _load_fold_views(
+        train_df, test_df, true_noisy_mask, known_ground_truth_mask = _load_fold_views(
             dataset=dataset,
             noise_type=noise_type,
             seed=seed,
@@ -687,6 +1008,7 @@ def run_5cv_filters(
             encoding=encoding,
             root=root,
             test_source=test_source,
+            return_ground_truth_known=True,
         )
 
         X_train = train_df.iloc[:, :-1]
@@ -713,13 +1035,30 @@ def run_5cv_filters(
             class_metrics = _classification_metrics(y_test, y_pred, ml) if not invalid else _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
             if invalid:
                 keep_mask = np.ones(n_train_input, dtype=bool)
-                removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
+                removal_metrics = _safe_metric_rows([
+                    "n_true_noisy",
+                    "n_known_ground_truth",
+                    "n_unknown_ground_truth",
+                    "ground_truth_exact",
+                    "n_removed_pred",
+                    "removed_pct",
+                    "acc_removal",
+                    "precision_removal",
+                    "recall_removal",
+                    "f1_removal",
+                    "specificity",
+                    "mcc",
+                ])
             else:
                 keep_mask = _extract_keep_mask(pipe, original_n=n_train_input)
                 if protected_mask.any():
                     keep_mask, invalid = _ensure_two_classes_after_protection(y_train, keep_mask, protected_mask)
                 pred_removed_mask = ~keep_mask
-                removal_metrics = _removal_metrics(true_noisy_mask=true_noisy_mask, pred_removed_mask=pred_removed_mask)
+                removal_metrics = _removal_metrics(
+                    true_noisy_mask=true_noisy_mask,
+                    pred_removed_mask=pred_removed_mask,
+                    known_ground_truth_mask=known_ground_truth_mask,
+                )
             # if invalid:
             #     _print_invalid_experiment(
             #         experiment=experiment,
@@ -747,7 +1086,20 @@ def run_5cv_filters(
                     )
                 invalid = True
                 class_metrics = _safe_metric_rows(["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"])
-                removal_metrics = _safe_metric_rows(["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc"])
+                removal_metrics = _safe_metric_rows([
+                    "n_true_noisy",
+                    "n_known_ground_truth",
+                    "n_unknown_ground_truth",
+                    "ground_truth_exact",
+                    "n_removed_pred",
+                    "removed_pct",
+                    "acc_removal",
+                    "precision_removal",
+                    "recall_removal",
+                    "f1_removal",
+                    "specificity",
+                    "mcc",
+                ])
             elapsed_s = perf_counter() - row_start
             fitted_filter = pipe.named_steps.get("filter")
             if fitted_filter is not None and getattr(fitted_filter, "action", "remove") == "remove":
@@ -811,7 +1163,21 @@ def run_5cv_filters(
     class_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "method"]
     removal_group_cols = ["dataset", "noise_type", "noise_pct", "seed", "k", "filter"]
     class_metric_cols = ["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro", "elapsed_s"]
-    removal_metric_cols = ["removed_pct", "acc_removal", "precision_removal", "recall_removal", "f1_removal", "specificity", "mcc", "elapsed_s"]
+    removal_metric_cols = [
+        "n_true_noisy",
+        "n_known_ground_truth",
+        "n_unknown_ground_truth",
+        "ground_truth_exact",
+        "n_removed_pred",
+        "removed_pct",
+        "acc_removal",
+        "precision_removal",
+        "recall_removal",
+        "f1_removal",
+        "specificity",
+        "mcc",
+        "elapsed_s",
+    ]
 
     expected_folds = len(tuple(folds))
 
@@ -915,7 +1281,7 @@ def run_5cv_experiment(
     removal_rows = []
 
     for fold in tqdm(list(folds), desc=f"5CV {dataset} {noise_type}"):
-        train_df, test_df, true_noisy_mask = _load_fold_views(
+        train_df, test_df, true_noisy_mask, known_ground_truth_mask = _load_fold_views(
             dataset=dataset,
             noise_type=noise_type,
             seed=seed,
@@ -924,6 +1290,7 @@ def run_5cv_experiment(
             encoding=encoding,
             root=root,
             test_source=test_source,
+            return_ground_truth_known=True,
         )
 
         X_train = train_df.iloc[:, :-1]
@@ -987,7 +1354,11 @@ def run_5cv_experiment(
             if protected_mask.any():
                 keep_mask = keep_mask | protected_mask
             pred_removed_mask = ~keep_mask
-            removal_metrics = _removal_metrics(true_noisy_mask=true_noisy_mask, pred_removed_mask=pred_removed_mask)
+            removal_metrics = _removal_metrics(
+                true_noisy_mask=true_noisy_mask,
+                pred_removed_mask=pred_removed_mask,
+                known_ground_truth_mask=known_ground_truth_mask,
+            )
 
             fitted_filter = pipe.named_steps.get("filter")
             if fitted_filter is not None and getattr(fitted_filter, "action", "remove") == "remove":
@@ -1049,6 +1420,11 @@ def run_5cv_experiment(
 
     class_metric_cols = ["accuracy", "bal_acc", "f1_macro", "precision_macro", "recall_macro"]
     removal_metric_cols = [
+        "n_true_noisy",
+        "n_known_ground_truth",
+        "n_unknown_ground_truth",
+        "ground_truth_exact",
+        "n_removed_pred",
         "removed_pct",
         "acc_removal",
         "precision_removal",
