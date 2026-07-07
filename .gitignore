@@ -1,15 +1,11 @@
 toDo.md
 dataset/
-results_5cv/
 /*.pkl
 temp/
 all_results/
-results/
-results copy/
-results_5cv_cnc nos/
-resultsEvaluation/
+/results/
 .Rhistory
-copias/
+/copias/
 /*.py
 /*.ipynb
 /*.pdf
