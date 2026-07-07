@@ -1,0 +1,15 @@
+toDo.md
+dataset/
+results_5cv/
+/*.pkl
+temp/
+all_results/
+results/
+results copy/
+results_5cv_cnc nos/
+resultsEvaluation/
+.Rhistory
+copias/
+/*.py
+/*.ipynb
+/*.pdf

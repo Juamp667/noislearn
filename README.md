@@ -1,5 +1,5 @@
 <div style="display: flex; flex-direction: row; align-items: center; gap: 12px;">
-  <img src="logo.png" alt="" width="62">
+  <img src="logo.png" alt="" width="200">
   <h1 style="margin: 0;">noislearn</h1>
 </div>
 ![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)
@@ -10,16 +10,16 @@ Documentation site: `https://noislearn.org/`
 
 ## What is included
 
-| Area                     | Contents                                                                                                                |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
-| Noise generation         | `URLFNoise`, `NARNoise`, `urlf`, `nar`, and persisted `noise_mask_` support                                             |
-| Distance-based filters   | `AllKNN`, `TomekLinks`, `ENNFilter`, `ENNProbFilter` / `ENNTh`, `MultiEditFilter`, `NCNEdit`                            |
+| Area                     | Contents                                                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Noise generation         | `URLFNoise`, `NARNoise`, `urlf`, `nar`, and persisted `noise_mask_` support                                                                               |
+| Distance-based filters   | `AllKNN`, `TomekLinks`, `ENNFilter`, `ENNProbFilter` / `ENNTh`, `MultiEditFilter`, `NCNEdit`                                                              |
 | Classifier-based filters | `ClassificationFilter` (CF), `CVCFFilter`, `FilterEnsembleFilter` (FEF), `EnsembleFiltering` (EF), `INFFC_old_wrong`, `IterativePartitioningFilter` (IPF) |
-| TabPFN-based filters     | `TabPFN_CF`, `TabPFN_CVCF`, SHAP-based local explanation reports                                                        |
-| High-level cleaner       | `CNCNOSCleaner`                                                                                                         |
-| Noise-score filtering    | `NoiseScoreFilter` with mean, quantile, beta-adaptive, and rational-valley thresholds                                   |
-| Evaluation tooling       | `noise_cv_eval.py`, `noise_score_eval.py`, `testFuncs.py`, notebooks for experiments and analysis                       |
-| Documentation site       | MkDocs Material source and API reference                                                                                |
+| TabPFN-based filters     | `TabPFN_CF`, `TabPFN_CVCF`, SHAP-based local explanation reports                                                                                          |
+| High-level cleaner       | `CNCNOSCleaner`                                                                                                                                           |
+| Noise-score filtering    | `NoiseScoreFilter` with mean, quantile, beta-adaptive, and rational-valley thresholds                                                                     |
+| Evaluation tooling       | `noise_cv_eval.py`, `noise_score_eval.py`, `testFuncs.py`, notebooks for experiments and analysis                                                         |
+| Documentation site       | MkDocs Material source and API reference                                                                                                                  |
 
 ## Current status
 
@@ -30,7 +30,6 @@ Documentation site: `https://noislearn.org/`
 - The default filter action removes suspicious samples, while `action="detect"` preserves the original data and only reports detections.
 - Noise generators can return the true corruption mask and estimator wrappers store it as `noise_mask_`.
 - The 5-fold evaluation utilities can use persisted `.noise_mask.npy`, `.noise_mask.csv`, or `.noise_mask.txt` files and track unknown ground-truth rows separately.
-
 
 ## Repository structure
 
