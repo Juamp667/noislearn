@@ -9,3 +9,7 @@ results copy/
 results_5cv_cnc nos/
 resultsEvaluation/
 .Rhistory
+copias/
+*.py
+*.ipynb
+*.pdf
